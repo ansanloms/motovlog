@@ -27,7 +27,7 @@
     "motovlog-convert": "scripts/bin/convert.mjs"
   },
   "dependencies": {
-    "temporal-polyfill": "1.0.4",
+    "temporal-polyfill": "1.0.5",
     "tsx": "4.23.13"
   },
   "peerDependencies": {
