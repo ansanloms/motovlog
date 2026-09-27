@@ -36,6 +36,7 @@ projects/<slug>/timeline.ts の要素 (コンポーネントの呼び出し) に
 - 静的なスタイルは各コンポーネントの `*.module.css` に書き、トークンは `var(--...)` で参照する。色・サイズの値を CSS に直接書かない。
 - フレームごとに変わる値 (不透明度・位置・スケール) はインラインスタイルで渡す。CSS の `transition`・`@keyframes` は使わない (Remotion のフレーム独立描画と同期しないため、https://www.remotion.dev/docs/troubleshooting/css-animations を参照)。
 - 秒数のトークンは `src/theme/timing.ts` に置き、CSS 変数にしない。
+- OP・ED の尺は動画ごとに決める値として timeline.ts に書く。theme の秒数は演出の秒数 (章タイトル・字幕・立ち絵の出入り) に限る。T&M の OP 4.8 秒・ED 12 秒は文書上の既定値で、コードには持たない (各 project の timeline.ts が直値で書く)。
 - 立ち絵を左右どちらに置くかは例外とし、`figure()` の `side` で timeline.ts から指定する ([ADR-0011](./0011-draw-figure-from-character-presets-linked-by-speech.md))。値は `"left"` と `"right"` で、既定は `"left"` とする。`side` は見た目の値ではなく、章の区切りで書き手が選ぶ位置の切り替えを表す。左右それぞれの座標は T&M と `src/components/Figure.module.css` が持つ。
 
 ## Consequences
