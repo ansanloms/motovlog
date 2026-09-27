@@ -585,6 +585,67 @@ describe("narration", () => {
     });
   });
 
+  it("lines は line() item ごとに、渡した順で入力 item 自体を持つ", async () => {
+    const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
+    const c = character({ expressions: { normal: ["a.png"] } });
+
+    const itemA = cut(line({ text: "A", by: c }), {
+      at: characterTiming.lead,
+    });
+    const itemB = cut(line({ text: "B" }), { after: 0 });
+    const itemC = cut(line({ text: "C", voice: null }), {
+      after: 0,
+      duration: 1,
+    });
+
+    const n = await narration(
+      [figure(c, {}, [itemA]), itemB, itemC],
+      { slug: "sample" },
+      { fetchCache, isStudio: () => false },
+    );
+
+    expect(n.lines).toHaveLength(n.speech.length);
+    expect(n.lines).toHaveLength(3);
+    expect(n.lines[0]).toBe(itemA);
+    expect(n.lines[1]).toBe(itemB);
+    expect(n.lines[2]).toBe(itemC);
+  });
+
+  it("line() 以外の item は lines に含まれない", async () => {
+    const fetchCache = await fetchCacheFor({ A: 1 });
+
+    const n = await narration(
+      [
+        cut(line({ text: "A" }), { at: 0 }),
+        cut(annotation({ text: "x" }), { after: 0, duration: 1 }),
+      ],
+      { slug: "sample" },
+      { fetchCache, isStudio: () => false },
+    );
+
+    expect(n.lines).toHaveLength(1);
+  });
+
+  it("lines[i] を start() に渡すと、塊を置いた位置 + speech[i].at に解決される", async () => {
+    const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
+
+    const n = await narration(
+      [
+        cut(line({ text: "A" }), { at: 0 }),
+        cut(line({ text: "B" }), { after: 0 }),
+      ],
+      { slug: "sample" },
+      { fetchCache, isStudio: () => false },
+    );
+
+    const result = timeline([
+      [cut(n, { at: 2 })],
+      [cut(null, { duration: 1, at: start(n.lines[1]) })],
+    ]);
+
+    expect(result.layers[1][0].at).toBeCloseTo(2 + n.speech[1].at);
+  });
+
   it("duration を明示した line() item が実尺より短ければ speech.duration はその値にクランプされる (#3)", async () => {
     const fetchCache = await fetchCacheFor({ A: 2.0 });
 
