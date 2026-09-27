@@ -145,6 +145,16 @@ export const ryusei = character({
     }),
 
     /**
+     * 頬を掻き下をみる。
+     */
+    scratchAndEyesdown: getFigureLayer({
+      ...expressionBase,
+      arms: arms.scratch,
+      eyes: eyes.down,
+      fx: [...(expressionBase.fx ?? []), fx.blush],
+    }),
+
+    /**
      * 汗。
      */
     sweat: getFigureLayer({
@@ -153,7 +163,7 @@ export const ryusei = character({
     }),
 
     /**
-     * 汗。
+     * 大汗。
      */
     sweatBig: getFigureLayer({
       ...expressionBase,
@@ -174,6 +184,14 @@ export const ryusei = character({
     cry: getFigureLayer({
       ...expressionBase,
       opts: [...(expressionBase.opts ?? []), opts.cry],
+    }),
+
+    /**
+     * 号泣。
+     */
+    bawl: getFigureLayer({
+      ...expressionBase,
+      fx: [...(expressionBase.fx ?? []), fx.blush, fx.tearStream],
     }),
 
     /**
@@ -218,15 +236,14 @@ export const ryusei = character({
       fx: [...(expressionBase.fx ?? []), fx.blush, fx.cheekLines],
     }),
 
-    //teach: [
-    //  body,
-    //  arms.explain,
-    //  mouth,
-    //  eyes.normal,
-    //  brows.up,
-    //  opt.pen,
-    //  opt.glasses,
-    //],
-    //armsCrossed: [body, arms.crossed, mouth, eyes.normal, brows.angry, opt.pen],
+    /**
+     * 腕組み。
+     */
+    crossed: getFigureLayer({
+      ...expressionBase,
+      mouth: mouth.smile,
+      arms: arms.crossed,
+      brows: brows.angry,
+    }),
   },
 });
