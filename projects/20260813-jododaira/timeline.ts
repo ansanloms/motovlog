@@ -19,10 +19,9 @@ import {
   cut,
   end,
   fade,
-  frame,
+  start,
   timeline,
 } from "../../src/effects/index.ts";
-import { endingTiming, openingTiming } from "../../src/theme/index.ts";
 
 const asset = (path: string) =>
   staticFile(`projects/20260813-jododaira/${path}`);
@@ -32,87 +31,71 @@ const clip1 = fade(
     src: asset("DASHCAM_20260816_133345_466_541(1).mp4"),
     trimBefore: 368.867,
     volume: [
-      { at: 0, volume: 0 },
-      { at: 1.2, volume: 0.15 },
-      { at: 47.633, volume: 0.15 },
-      { at: 48.633, volume: 0 },
+      { at: 0, volume: 0.8 },
+      { at: 2, volume: 0.2 },
     ],
   }),
-  { at: 4.8, duration: 48.633, in: 0.5, out: 0.5 },
+  { at: 0, duration: 50, in: 1.5, out: 2, audio: true },
 );
+
 const clip2 = fade(
   video({
     src: asset("DASHCAM_20260816_133345_466_541(1).mp4"),
     trimBefore: 901.802,
     volume: [
-      { at: 0, volume: 0 },
-      { at: 3, volume: 0.1 },
-      { at: 32.9, volume: 0.1 },
+      { at: 0, volume: 0.3 },
+      { at: 2, volume: 0.1 },
     ],
   }),
-  { at: 54.267, duration: 32.9, in: 1.5 },
+  { after: 1, duration: 32, in: 1.5, out: 1, audio: true },
 );
+
 const clip3 = fade(
   video({
     src: asset("DASHCAM_20260816_133345_466_541(1).mp4"),
     trimBefore: 2286.369,
-    volume: [
-      { at: 0, volume: 0.1 },
-      { at: 84.367, volume: 0.1 },
-      { at: 87.367, volume: 0 },
-    ],
+    volume: [{ at: 0, volume: 0.1 }],
   }),
-  { at: 87.167, duration: 87.367, in: 1.5 },
+  { after: 0, duration: 87, in: 1, out: 1.5, audio: true },
 );
+
 const clip4 = fade(
   video({
     src: asset("DASHCAM_20260817_054843_700_729.mp4"),
     trimBefore: 0,
     volume: [
       { at: 0, volume: 1 },
-      { at: 9.233, volume: 1 },
-      { at: 9.733, volume: 0 },
+      { at: 10, volume: 0 },
     ],
   }),
-  { at: 175.567, duration: 9.733, in: 2 },
+  { after: 2, duration: 10, in: 2 },
 );
+
 const clip5 = fade(
   video({
     src: asset("DASHCAM_20260817_054843_700_729.mp4"),
     trimBefore: 30.134,
-    volume: [
-      { at: 0, volume: 0.15 },
-      { at: 6.6, volume: 0.15 },
-      { at: 7.6, volume: 0 },
-    ],
+    volume: [{ at: 0, volume: 0.1 }],
   }),
-  { at: 185.3, duration: 7.6, out: 1 },
+  { after: 0, duration: 7.6, out: 1, audio: true },
 );
+
 const clip6 = fade(
   video({
     src: asset("DASHCAM_20260817_054843_700_729.mp4"),
     trimBefore: 92.768,
-    volume: [
-      { at: 0, volume: 0 },
-      { at: 0.5, volume: 0.15 },
-      { at: 112.734, volume: 0.15 },
-      { at: 113.234, volume: 0 },
-    ],
+    volume: [{ at: 0, volume: 0.1 }],
   }),
-  { at: 193.933, duration: 113.234, in: 0.5 },
+  { after: 1, duration: 113, in: 0.5 },
 );
-const clip7 = cut(
+
+const clip7 = fade(
   video({
     src: asset("DASHCAM_20260817_064135_748_809.mp4"),
     trimBefore: 995.736,
-    volume: [
-      { at: 0, volume: 0 },
-      { at: 1, volume: 0.15 },
-      { at: 60.633, volume: 0.15 },
-      { at: 62.633, volume: 0 },
-    ],
+    volume: [{ at: 0, volume: 0.1 }],
   }),
-  { duration: 62.633 },
+  { duration: 54, audio: true },
 );
 
 // 発話は立ち絵が出る 6 本の区間 (走行中の会話) に分け、それぞれ塊
@@ -124,39 +107,39 @@ const clip7 = cut(
 // (下の layer 3)。区間の途中で at を使っていた行は、その塊の先頭からの
 // 相対秒 (元の絶対秒 − 立ち絵が出始める秒) に書き換えている。
 const n1 = await narration([
-  figure(ryusei, { side: "left", in: 0.4, lead: 1.867, tail: 2.173 }, [
+  figure(ryusei, { side: "left", in: 0.4, out: 0.4, lead: 2, tail: 2 }, [
     cut(
       line({
         text: "取りました",
         by: { character: ryusei, expression: "normal" },
       }),
-      { at: 1.867 },
+      { at: 2 },
     ),
-    cut(line({ text: "免許を", by: ryusei }), { after: 2.334 }),
-    cut(line({ text: "買いました", by: ryusei }), { after: 2.266 }),
-    cut(line({ text: "バイクも", by: ryusei }), { after: 2.366 }),
+    cut(line({ text: "免許を", by: ryusei }), { after: 2 }),
+    cut(line({ text: "買いました", by: ryusei }), { after: 2 }),
+    cut(line({ text: "バイクも", by: ryusei }), { after: 2 }),
     cut(
       line({
-        text: "{Honda|ホンダ} GB350C です",
+        text: "Honda GB350C です",
         reading: "{Honda|ホンダ} GB350 Cです",
         by: ryusei,
       }),
-      { after: 2.201 },
+      { after: 2 },
     ),
     cut(
       line({
         text: "乗りました",
         by: { character: ryusei, expression: "scratch" },
       }),
-      { after: 3.9 },
+      { after: 4 },
     ),
-    cut(line({ text: "半年くらい", by: ryusei }), { after: 1.634 }),
+    cut(line({ text: "半年くらい", by: ryusei }), { after: 2 }),
     cut(
       line({
         text: "まだ 怖いです",
         by: { character: ryusei, expression: "paleAndSweatBig" },
       }),
-      { after: 3.233 },
+      { after: 4 },
     ),
     cut(
       line({
@@ -166,145 +149,208 @@ const n1 = await narration([
           expression: "shynessAndScratchAndEyesdownAway",
         },
       }),
-      { after: 1.733 },
+      { after: 2 },
     ),
     cut(
       line({
         text: "福島県は 磐梯吾妻スカイラインを走って",
         by: { character: ryusei, expression: "scratch" },
       }),
-      { after: 4.7 },
+      { after: 4 },
     ),
     cut(line({ text: "{浄土平|じょうどだいら}に", by: ryusei }), {
-      after: 2.034,
+      after: 2,
     }),
     cut(
       line({
         text: "行きます",
         by: { character: ryusei, expression: "angry" },
       }),
-      { after: 1.433 },
+      { after: 2 },
     ),
   ]),
 ]);
 
 const n2 = await narration([
-  figure(ryusei, { side: "left", in: 1, lead: 2.467, tail: 1.533 }, [
-    cut(line({ text: "今日は", by: ryusei }), { at: 2.467 }),
+  figure(ryusei, { side: "left", in: 0.4, out: 0.4, lead: 2, tail: 2 }, [
+    cut(line({ text: "今日は", by: ryusei }), { at: 3 }),
     cut(line({ text: "(2026年)8月は中旬", reading: "8月は中旬", by: ryusei }), {
-      after: 1.067,
+      after: 1,
     }),
-    cut(line({ text: "お盆です", by: ryusei }), { after: 1.233 }),
+    cut(line({ text: "お盆です", by: ryusei }), { after: 1 }),
     cut(
       line({
         text: "ここは 南ゲート入口(土湯峠側)",
         reading: "ここは 南ゲート入口",
         by: ryusei,
       }),
-      { after: 2.234 },
+      { after: 2.5 },
     ),
     cut(line({ text: "磐梯吾妻スカイラインの平均標高は", by: ryusei }), {
-      after: 2.533,
+      after: 2.5,
     }),
     cut(line({ text: "1350メートル", by: ryusei }), { after: 1.5 }),
     cut(
       line({
         text: "ライディングジャケットを通りぬける風が ちょっとつめたいです",
-        by: ryusei,
+        by: { character: ryusei, expression: "scratch" },
       }),
-      { after: 2.733 },
+      { after: 3 },
     ),
   ]),
 ]);
 
 const n3 = await narration([
-  figure(ryusei, { side: "right", in: 1, lead: 1.633, tail: 4.281 }, [
+  figure(ryusei, { side: "right", in: 0.4, out: 0.4, lead: 2, tail: 2 }, [
     cut(line({ text: "吾妻の山が みえてきました", by: ryusei }), {
-      at: 1.633,
+      at: 2,
     }),
     cut(
       line({
-        text: "もうすこしで{浄土平|じょうどだいら}ビジターセンターです",
+        text: "もうすこしで浄土平ビジターセンターです",
         reading: "もうすこしで {浄土平|じょうどだいら} ビジターセンターです",
         by: ryusei,
       }),
-      { after: 3.233 },
+      { after: 3 },
     ),
     cut(
       line({
         text: "標高は1600メートル程",
         reading: "標高は 1600メートル程",
+        by: { character: ryusei, expression: "scratch" },
+      }),
+      { after: 3 },
+    ),
+    cut(
+      line({
+        text: "吾妻の山々への玄関口になっているほか",
+        reading: "吾妻の山々への 玄関口になっているほか",
         by: ryusei,
       }),
-      { after: 3.066 },
+      {
+        after: 3,
+      },
     ),
-    cut(line({ text: "吾妻の山々への玄関口になっているほか", by: ryusei }), {
-      after: 3.467,
-    }),
     cut(
       line({
         text: "日本一標高の高い天文台もあります",
-        reading: "日本一標高の高い天文台も あります",
+        reading: "日本一 標高の高い天文台も あります",
         by: ryusei,
       }),
-      { after: 2.599 },
+      { after: 2.5 },
     ),
-    cut(line({ text: "目の前の山は", by: ryusei }), { at: 32.633 }),
-    cut(line({ text: "吾妻小富士", by: ryusei }), { after: 3.567 }),
-    cut(line({ text: "登りました", by: ryusei }), { after: 3.4 }),
-    cut(line({ text: "いい山でした", reading: "いい 山でした", by: ryusei }), {
-      at: 47.5,
-    }),
+    cut(line({ text: "目の前の山は", by: ryusei }), { after: 3 }),
+    cut(line({ text: "吾妻小富士", by: ryusei }), { after: 3 }),
+    cut(
+      line({
+        text: "登りました",
+        by: { character: ryusei, expression: "normal" },
+      }),
+      { after: 3 },
+    ),
+    cut(
+      line({
+        text: "いい山でした",
+        reading: "いい 山でした",
+        by: { character: ryusei, expression: "crossed" },
+      }),
+      {
+        after: 4,
+      },
+    ),
     cut(
       line({
         text: "今夜は泊まります",
         reading: "今夜は 泊まります",
-        by: ryusei,
+        by: { character: ryusei, expression: "normal" },
       }),
-      { at: 54.733 },
+      { after: 5 },
     ),
     cut(line({ text: "{浄土平|じょうどだいら}キャンプ場", by: ryusei }), {
-      after: 2.3,
+      after: 3,
     }),
-    cut(line({ text: "テントを張りました", by: ryusei }), { after: 3.834 }),
+    cut(
+      line({
+        text: "テントを張りました",
+        reading: "テントを 張りました",
+        by: { character: ryusei, expression: "crossed" },
+      }),
+      { after: 4 },
+    ),
     cut(line({ text: "星空観察と 洒落込むつもりでした", by: ryusei }), {
       after: 2,
     }),
-    cut(line({ text: "あいにくの曇りと そして霧", by: ryusei }), {
-      after: 3.033,
-    }),
-    cut(line({ text: "しました", by: ryusei }), { after: 2.434 }),
-    cut(line({ text: "ふて寝を", by: ryusei }), { after: 2.833 }),
+    cut(
+      line({
+        text: "あいにくの曇りと そして霧",
+        by: { character: ryusei, expression: "normal" },
+      }),
+      {
+        after: 3,
+      },
+    ),
+    cut(
+      line({ text: "しました", by: { character: ryusei, expression: "bawl" } }),
+      { after: 3 },
+    ),
+    cut(line({ text: "ふて寝を", by: ryusei }), { after: 2 }),
   ]),
 ]);
 
 const n4 = await narration([
-  figure(ryusei, { side: "right", in: 1, out: 1, lead: 1.1, tail: 1.47 }, [
-    cut(line({ text: "朝", by: ryusei }), { at: 1.1 }),
+  figure(ryusei, { side: "right", in: 1, out: 1, lead: 1, tail: 1 }, [
+    cut(line({ text: "朝", by: ryusei }), { at: 1 }),
     cut(line({ text: "遠くに広がる 朝日に照らされた雲海", by: ryusei }), {
-      at: 6.9,
+      at: 7,
     }),
     cut(
-      line({ text: "つづら折りのその先に 突っこみたくなるような", by: ryusei }),
-      { after: 3.933 },
+      line({
+        text: "つづら折りのその先に 突っこみたくなるような",
+        by: { character: ryusei, expression: "scratchAndEyesdown" },
+      }),
+      { after: 4 },
     ),
-    cut(line({ text: "そんな 不思議な眺望です", by: ryusei }), {
-      after: 2.8,
-    }),
+    cut(
+      line({
+        text: "そんな不思議な眺望です",
+        reading: "そんな 不思議な眺望です",
+        by: ryusei,
+      }),
+      {
+        after: 2.8,
+      },
+    ),
   ]),
 ]);
 
 const n5 = await narration([
-  figure(ryusei, { side: "left", in: 1, out: 1, lead: 1.2, tail: 1.433 }, [
-    cut(line({ text: "荒々しい山肌も相まって", by: ryusei }), { at: 1.2 }),
+  figure(ryusei, { side: "left", in: 1, out: 1, lead: 1, tail: 1 }, [
+    cut(
+      line({
+        text: "荒々しい山肌も相まって",
+        by: { character: ryusei, expression: "scratchAndEyesdown" },
+      }),
+      { at: 1 },
+    ),
     cut(line({ text: "およそ この世のものとは思えないような", by: ryusei }), {
-      after: 2.199,
+      after: 2,
     }),
-    cut(line({ text: "そんな景色でした", by: ryusei }), { after: 3.2 }),
+    cut(
+      line({
+        text: "そんな景色でした",
+        reading: "そんな 景色でした",
+        by: {
+          character: ryusei,
+          expression: "shynessAndScratchAndEyesdownAway",
+        },
+      }),
+      { after: 3 },
+    ),
     cut(
       line({
         text: "(「火山ガス注意」「窓を閉めて走行下さい」の看板にビビり散らかしている)",
         voice: null,
+        by: { character: ryusei, expression: "paleAndSweatBig" },
       }),
       { at: 19.733, duration: 3.167 },
     ),
@@ -312,39 +358,59 @@ const n5 = await narration([
 ]);
 
 const n6 = await narration([
-  figure(ryusei, { side: "left", in: 0.4, out: 1, lead: 1.333, tail: 3.43 }, [
-    cut(line({ text: "福島は地元で", by: ryusei }), { at: 1.333 }),
+  figure(ryusei, { side: "left", in: 1, out: 1, lead: 1, tail: 3 }, [
+    cut(line({ text: "福島は地元で", by: ryusei }), { at: 2 }),
     cut(
       line({
         text: "実は小さい頃 親の車に連れられ何度か来たことがあります",
-        by: ryusei,
+        reading: "実は 小さい頃 親の車に連れられ 何度か来たことが あります",
+        by: { character: ryusei, expression: "scratch" },
       }),
-      { after: 2.233 },
+      { after: 2 },
     ),
     cut(
       line({
         text: "自分のバイクでここに来たのは もちろんはじめてだったのですが",
         by: ryusei,
       }),
-      { after: 4.034 },
+      { after: 4 },
     ),
     cut(
       line({
         text: "車窓の景色を眺めるのとは違う 形容しがたいこの感覚に",
-        by: ryusei,
+        by: { character: ryusei, expression: "scratchAndEyesdown" },
       }),
-      { after: 4.4 },
+      { after: 4 },
     ),
-    cut(line({ text: "圧倒されてしまいました", by: ryusei }), {
-      after: 3.033,
-    }),
-    cut(line({ text: "まだまだ バイクが楽しい季節です", by: ryusei }), {
-      after: 3.533,
-    }),
+    cut(
+      line({
+        text: "圧倒されてしまいました",
+        by: {
+          character: ryusei,
+          expression: "shynessAndScratchAndEyesdownAway",
+        },
+      }),
+      { after: 3 },
+    ),
+    cut(
+      line({
+        text: "まだまだ バイクが楽しい季節です",
+        by: { character: ryusei, expression: "scratch" },
+      }),
+      { after: 3 },
+    ),
     cut(line({ text: "行ってみたいものですね", by: ryusei }), {
-      after: 4.7,
+      after: 4,
     }),
-    cut(line({ text: "もっと遠くへ", by: ryusei }), { after: 4.033 }),
+    cut(
+      line({
+        text: "もっと遠くへ…",
+        reading: "もっと 遠くへ",
+
+        by: { character: ryusei, expression: "crossed" },
+      }),
+      { after: 3 },
+    ),
   ]),
 ]);
 
@@ -357,51 +423,10 @@ export default timeline([
     clip4,
     clip5,
     clip6,
-    crossfade({ duration: 4.167 }),
+    crossfade({ duration: 4, audio: true }),
     clip7,
-  ],
-  // layer 1: OP・章タイトル・写真紹介・ED
-  [
-    cut(
-      thumbnail({
-        photo: asset("photos/PXL_20260815_045406555.RAW-01.jpg"),
-        badge: "#1 福島",
-        title: "浄土平に\n行く",
-        by: ryusei,
-      }),
-      { at: 0, duration: openingTiming.duration },
-    ),
-    cut(
-      photoShowcase({
-        photos: [asset("photos/PXL_20260815_045406555.RAW-01.jpg")],
-      }),
-      { at: 19.967, duration: 3.133 },
-    ),
-    cut(
-      photoShowcase({
-        photos: [asset("photos/PXL_20260816_084122600.RAW-01.MP.jpg")],
-      }),
-      { at: 107.867, duration: 3.133 },
-    ),
-    cut(
-      photoShowcase({
-        photos: [asset("photos/PXL_20260816_055629520.RAW-01.jpg")],
-      }),
-      { at: 113.233, duration: 3.767 },
-    ),
-    cut(
-      photoShowcase({
-        photos: [asset("photos/PXL_20260816_211100736.PANO.jpg")],
-      }),
-      { at: 130.8, duration: 3.533 },
-    ),
-    cut(
-      photoShowcase({
-        photos: [asset("photos/PXL_20260816_092038409.RAW-01.MP.jpg")],
-      }),
-      { at: 152.867, duration: 1.733 },
-    ),
-    cut(
+    crossfade({ duration: 1.5, audio: true }),
+    fade(
       ending({
         title: "RIDE LOG",
         subtitle: "#1 福島",
@@ -422,62 +447,102 @@ export default timeline([
           { イラスト: "Jacca さま" },
         ],
       }),
-      {
-        at: end(clip7, -endingTiming.duration),
-        duration: endingTiming.duration,
-      },
+      { duration: 5, out: 1 },
+    ),
+    fade(
+      thumbnail({
+        photo: asset("photos/PXL_20260815_045406555.RAW-01.jpg"),
+        badge: "#1 福島",
+        title: "浄土平に\n行く",
+        by: ryusei,
+      }),
+      { after: 0, duration: 5, in: 1 },
+    ),
+  ],
+
+  // layer 1: 章タイトル・写真紹介・ED
+  [
+    // GB350C
+    cut(
+      photoShowcase({
+        photos: [asset("photos/PXL_20260815_045406555.RAW-01.jpg")],
+      }),
+      { at: start(n1.lines[4]), until: end(n1.lines[4]) },
+    ),
+
+    // 浄土平ビジターセンター
+    cut(
+      photoShowcase({
+        photos: [asset("photos/PXL_20260816_084122600.RAW-01.MP.jpg")],
+      }),
+      { at: start(n3.lines[3]), until: end(n3.lines[3]) },
+    ),
+
+    // 浄土平天文台
+    cut(
+      photoShowcase({
+        photos: [asset("photos/PXL_20260816_055629520.RAW-01.jpg")],
+      }),
+      { at: start(n3.lines[4]), until: end(n3.lines[4]) },
+    ),
+
+    // 吾妻小富士
+    cut(
+      photoShowcase({
+        photos: [asset("photos/PXL_20260816_211100736.PANO.jpg")],
+      }),
+      { at: start(n3.lines[7]), until: end(n3.lines[7], 3) },
+    ),
+
+    // テント
+    cut(
+      photoShowcase({
+        photos: [asset("photos/PXL_20260816_092038409.RAW-01.MP.jpg")],
+      }),
+      { at: start(n3.lines[11]), until: end(n3.lines[11]) },
+    ),
+
+    // 星空
+    cut(
+      photoShowcase({
+        photos: [{ video: asset("20260830_013401_425.mp4") }],
+        fit: "contain",
+      }),
+      { at: start(n3.lines[13]), until: end(n3.lines[13], 5) },
     ),
   ],
   // layer 2: BGM
   [
-    cut(
+    fade(
       audio({
-        src: staticFile("assets/bgm/m1.wav"),
+        src: staticFile("assets/bgm/touring-001.wav"),
         trimBefore: 0,
-        volume: [
-          { at: 0, volume: 0.1 },
-          { at: 120.6, volume: 0.1 },
-          { at: 121.1, volume: 0 },
-        ],
+        volume: [{ at: 0, volume: 0.1 }],
       }),
-      { at: 53.433, duration: 121.1 },
+      { at: start(clip2, -1), duration: 121, in: 0.1, out: 0.2, audio: true },
     ),
-    cut(
+    fade(
       audio({
-        src: staticFile("assets/bgm/m1.wav"),
-        trimBefore: 121.1,
+        src: staticFile("assets/bgm/touring-001.wav"),
+        trimBefore: 121,
         volume: [
-          { at: 0, volume: 0 },
-          { at: 0.5, volume: 0.1 },
-          { at: 163.167, volume: 0.1 },
-          { at: 165.167, volume: 0 },
+          { at: 0, volume: 0.3 },
+          { at: 6, volume: 0.3 },
+          { at: 8, volume: 0.1 },
         ],
       }),
-      { at: 200.467, duration: 165.167 },
+      { at: start(clip6, 6), duration: 165, in: 1, out: 0.1, audio: true },
     ),
   ],
   // layer 3: 発話 (立ち絵・暗がり・字幕を持つ塊、6 本)。各塊の先頭を
   // その立ち絵が出始める秒に置く (上のコメント参照)。frame() の黒落ち
   // (layer 4) より下に置くため、立ち絵・字幕も黒落ちの対象になる。
   [
-    cut(n1, { at: 6.633 }),
-    cut(n2, { at: 59.233 }),
-    cut(n3, { at: 89.267 }),
-    cut(n4, { at: 208.667 }),
-    cut(n5, { at: 256.167 }),
-    cut(n6, { at: 305.567 }),
-  ],
-  // layer 4: 下の layer の合成結果に掛ける黒からの立ち上がり・黒落ち
-  [
-    fade(frame(), {
-      at: 0,
-      duration: openingTiming.fadeIn,
-      in: openingTiming.fadeIn,
-    }),
-    fade(frame(), { at: 51.233, duration: 2.2, out: 1 }),
-    fade(frame(), { at: 54.267, duration: 2, in: 1 }),
-    fade(frame(), { at: 86, duration: 1.167, out: 0.5 }),
-    fade(frame(), { at: 173.367, duration: 1.167, out: 0.5 }),
-    fade(frame(), { at: 364.267, duration: 1.367, in: 0.667, out: 0.667 }),
+    cut(n1, { at: start(clip1, 2) }),
+    cut(n2, { at: start(clip2, 2) }),
+    cut(n3, { at: start(clip3, 2) }),
+    cut(n4, { at: start(clip6, 14) }),
+    cut(n5, { at: start(clip6, 65) }),
+    cut(n6, { at: start(clip7, 3) }),
   ],
 ]);
