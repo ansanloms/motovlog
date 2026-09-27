@@ -334,6 +334,12 @@ export type Speech = {
 export type Narration = GroupNode & {
   /** 発話 (line() item) ごとの音声の実測値。渡した順。 */
   readonly speech: readonly Speech[];
+  /**
+   * line() item ごと (渡した順) の入力 item。speech[i] と lines[i] は同じ行を
+   * 指す。start()/end() に渡すと、その発話の開始・終端 (字幕の尺の終端) を
+   * 他の layer から参照できる。
+   */
+  readonly lines: readonly NarrationItem[];
 };
 
 /** narration() の音声を伴わない item (line() 以外、または voice: null の line()) の実尺セット。 */
@@ -545,6 +551,7 @@ export const narration = async (
 
   const speechLayer: Item[] = [];
   const speechEntries: Speech[] = [];
+  const lineItems: NarrationItem[] = [];
   const bandInputs: { start: number; speechEnd: number; captionEnd: number }[] =
     [];
   // index ごとの発話 layer への実際の掲載区間 (figure() の括りの境界の計算に使う)。
@@ -605,6 +612,7 @@ export const narration = async (
         by: speech.by,
         expression: speech.expression,
       });
+      lineItems.push(original);
 
       speechLayer.push({
         ...cut(React.createElement(Line, { text: speech.text }), {
@@ -654,6 +662,7 @@ export const narration = async (
       by: speech.by,
       expression: speech.expression,
     });
+    lineItems.push(original);
 
     speechLayer.push({
       ...cut(
@@ -734,5 +743,5 @@ export const narration = async (
       ? [figureLayer, bandLayer, speechLayer]
       : [bandLayer, speechLayer];
 
-  return { ...group(layers), speech: speechEntries };
+  return { ...group(layers), speech: speechEntries, lines: lineItems };
 };
