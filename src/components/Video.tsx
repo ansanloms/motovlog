@@ -17,6 +17,8 @@ type Props = {
    * に throw する。
    */
   volume?: Volume;
+  /** 枠への収め方。`cover` は枠を満たすよう切る、`contain` は切らずに収める。既定 `cover`。 */
+  objectFit?: "cover" | "contain";
 };
 
 /**
@@ -25,7 +27,12 @@ type Props = {
  * (`PREVIEW_HEIGHT` で変更可) のプロキシ、ADR-0013) を読み、render では本体を読む。プロキシが無い場合の
  * 救済は持たない (convert を再実行する)。
  */
-export const Video: React.FC<Props> = ({ src, trimBefore = 0, volume = 1 }) => {
+export const Video: React.FC<Props> = ({
+  src,
+  trimBefore = 0,
+  volume = 1,
+  objectFit = "cover",
+}) => {
   const { fps } = useVideoConfig();
   const { isRendering } = useRemotionEnvironment();
   const volumeProp = useVolumeProp(volume, fps);
@@ -35,7 +42,7 @@ export const Video: React.FC<Props> = ({ src, trimBefore = 0, volume = 1 }) => {
       src={isRendering ? src : previewSrc(src)}
       trimBefore={Math.round(trimBefore * fps)}
       volume={volumeProp}
-      objectFit="cover"
+      objectFit={objectFit}
       style={{ width: "100%", height: "100%" }}
     />
   );

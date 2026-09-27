@@ -19,12 +19,25 @@ type Props = {
    * 写真の URL (文字列) か、短い動画 (PhotoVideo)。
    */
   photos: readonly (string | PhotoVideo)[];
+  /**
+   * 枠への収め方。`cover` (既定) は枠を満たすよう切る、`contain` は切らずに
+   * 収め、影は媒体の縁に付ける。
+   */
+  fit?: "cover" | "contain";
 };
 
 /** photos の動画要素 1 個を描く (音は常に無音)。 */
-const PhotoVideoCell: React.FC<{ photo: PhotoVideo }> = ({ photo }) => (
+const PhotoVideoCell: React.FC<{
+  photo: PhotoVideo;
+  fit: "cover" | "contain";
+}> = ({ photo, fit }) => (
   <div className={styles.cell}>
-    <Video src={photo.video} trimBefore={photo.trimBefore} volume={0} />
+    <Video
+      src={photo.video}
+      trimBefore={photo.trimBefore}
+      volume={0}
+      objectFit={fit}
+    />
   </div>
 );
 
@@ -37,15 +50,15 @@ const PhotoVideoCell: React.FC<{ photo: PhotoVideo }> = ({ photo }) => (
  * 音を出さない (常に無音)。走行映像の上に重ねる演出のため、T&M の
  * 背景音をそのまま流す。
  */
-export const PhotoShowcase: React.FC<Props> = ({ photos }) => {
+export const PhotoShowcase: React.FC<Props> = ({ photos, fit = "cover" }) => {
   return (
     <AbsoluteFill>
-      <div className={styles.frame}>
+      <div className={styles.frame} data-fit={fit}>
         {photos.map((photo, index) =>
           typeof photo === "string" ? (
             <Img key={index} src={photo} className={styles.cell} />
           ) : (
-            <PhotoVideoCell key={index} photo={photo} />
+            <PhotoVideoCell key={index} photo={photo} fit={fit} />
           ),
         )}
       </div>
