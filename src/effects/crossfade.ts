@@ -4,6 +4,11 @@ import type { Transition } from "./types.ts";
 type CrossfadeOptions = {
   /** 遷移の尺 (秒)。 */
   duration: number;
+  /**
+   * true なら重なり区間で入る側の音量を 0 から 1、出る側を 1 から 0 に
+   * 等パワー曲線で交差させる。既定 false (不透明度だけ)。
+   */
+  audio?: boolean;
 };
 
 /**
@@ -13,7 +18,11 @@ type CrossfadeOptions = {
  * 禁止) は timeline() の resolveLayer で行う (cut と同じ方針)。
  */
 export const crossfade = (options: CrossfadeOptions): Transition => {
-  const { duration } = options;
+  const { duration, audio } = options;
 
-  return { kind: "crossfade", duration };
+  if (audio !== undefined && typeof audio !== "boolean") {
+    throw new Error(`crossfade: audio は boolean で指定します (${audio})`);
+  }
+
+  return { kind: "crossfade", duration, audio: audio ?? false };
 };

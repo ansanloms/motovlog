@@ -76,7 +76,7 @@ Remotion (4.0.521) には次の事実がある。
 - render worker ごとに timeline.ts の動的 import が走る。
 - Studio の props パネルから timeline の内容を編集できない (props は slug だけ)。
 - zod を外したため、timeline.ts の誤りは型検査と読み込み時の最小限の検査でしか捕まえられない。
-- fade の in/out は既定では不透明度だけに効く。`audio: true` を付けると同じ区間で 0 から 1 へ動く率 (音は両端で無音に届く) を item の下にある要素の音量にも掛ける (率は effects の Stage が context で配り、components はフレーム API を持たないまま読む)。音だけを別の形で動かすときは要素 (`video()`・`audio()`) の `volume` に要素相対秒の折れ線として書く。crossfade は不透明度だけに効き、重なり区間では両方の要素の音がそのまま重なる。
+- fade の in/out は既定では不透明度だけに効く。`audio: true` を付けると同じ区間で 0 から 1 へ動く率 (音は両端で無音に届く) を item の下にある要素の音量にも掛ける (率は effects の Stage が context で配り、components はフレーム API を持たないまま読む)。音だけを別の形で動かすときは要素 (`video()`・`audio()`) の `volume` に要素相対秒の折れ線として書く。crossfade も既定では不透明度だけに効き、重なり区間では両方の要素の音がそのまま重なる。`audio: true` で重なり区間の音を等パワー曲線で交差させる (fade の直線とは別の曲線。相関の無い音が中央で痩せないため)。
 
 ### 禁止事項
 
