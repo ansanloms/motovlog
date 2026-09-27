@@ -23,3 +23,10 @@
   box-shadow: var(--shadow-photo);
   display: block;
 }
+
+/* contain は切らずに収める。影は枠でなく媒体の縁に付ける (余白は透明)。 */
+.frame[data-fit="contain"] .cell {
+  object-fit: contain;
+  box-shadow: none;
+  filter: drop-shadow(var(--shadow-photo));
+}
