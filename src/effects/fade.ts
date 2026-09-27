@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { isFrame } from "./frame.ts";
 import type { GroupNode } from "./group.ts";
 import type { SampleNode } from "./sample.ts";
 import type { FadeItem, FrameMarker, Placement, Span } from "./types.ts";
@@ -13,6 +14,11 @@ type FadeOptions<Node> = Placement &
     in?: number;
     /** フェードアウトの尺 (秒)。既定は 0 (フェードなし)。 */
     out?: number;
+    /**
+     * true なら in/out の曲線を、この item の下にある要素の音量にも掛ける。
+     * 既定 false (不透明度だけ)。
+     */
+    audio?: boolean;
   };
 
 /**
@@ -41,6 +47,7 @@ export const fade = <
     until,
     in: fadeIn = 0,
     out: fadeOut = 0,
+    audio,
   } = options;
 
   if (duration !== undefined && until !== undefined) {
@@ -53,6 +60,14 @@ export const fade = <
 
   if (!Number.isFinite(fadeOut) || fadeOut < 0) {
     throw new Error(`fade: out が不正です (${fadeOut})`);
+  }
+
+  if (audio !== undefined && typeof audio !== "boolean") {
+    throw new Error(`fade: audio は boolean で指定します (${audio})`);
+  }
+
+  if (isFrame(node) && audio === true) {
+    throw new Error("fade: frame() には audio を指定できません");
   }
 
   if (duration !== undefined && fadeIn + fadeOut > duration) {
@@ -70,5 +85,6 @@ export const fade = <
     until,
     in: fadeIn,
     out: fadeOut,
+    audio: audio ?? false,
   } as FadeItem;
 };

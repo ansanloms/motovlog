@@ -2,7 +2,7 @@ import { Video as MediaVideo } from "@remotion/media";
 import React from "react";
 import { useRemotionEnvironment, useVideoConfig } from "remotion";
 import { previewSrc } from "./previewSrc.ts";
-import { toVolumeProp, type Volume } from "./volume.ts";
+import { useVolumeProp, type Volume } from "./volume.ts";
 
 /** Video が受け取るもの。 */
 type Props = {
@@ -28,10 +28,7 @@ type Props = {
 export const Video: React.FC<Props> = ({ src, trimBefore = 0, volume = 1 }) => {
   const { fps } = useVideoConfig();
   const { isRendering } = useRemotionEnvironment();
-  const volumeProp = React.useMemo(
-    () => toVolumeProp(volume, fps),
-    [volume, fps],
-  );
+  const volumeProp = useVolumeProp(volume, fps);
 
   return (
     <MediaVideo

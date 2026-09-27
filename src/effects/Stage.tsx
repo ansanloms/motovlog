@@ -1,9 +1,11 @@
 import React, { Fragment } from "react";
 import { AbsoluteFill, Sequence, useCurrentFrame } from "remotion";
+import { FadeGainContext, useFadeGain } from "../fadeGain.ts";
 import { getSetup } from "../setup.ts";
 import { ThemeRoot } from "../theme/index.ts";
 import { isFrame } from "./frame.ts";
 import {
+  fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
   toFrame,
@@ -92,6 +94,7 @@ const renderLayers = (
                 durationInFrames={durationInFrames}
                 inFrames={toFrame(item.in, fps)}
                 outFrames={toFrame(item.out, fps)}
+                audio={item.audio}
               >
                 {node}
               </FadeLayer>
@@ -115,6 +118,7 @@ const renderLayers = (
                     fps,
                   })}
                   outFrames={0}
+                  audio={false}
                 >
                   {body}
                 </FadeLayer>
@@ -182,17 +186,39 @@ const Sampled: React.FC<{
   );
 };
 
-/** fade アイテムの不透明度を、Sequence 内 (0 起点) の frame から計算して当てる。 */
+/**
+ * fade アイテムの不透明度を、Sequence 内 (0 起点) の frame から計算して当てる。
+ * `audio` が true なら音量の率 (gain、fadeGain。fadeOpacity と違い両端で
+ * 0 に届く) を FadeGainContext に配る (親から受け継いだ gain との乗算)。
+ * false なら Provider を置かず、親の gain をそのまま子に通す。
+ */
 const FadeLayer: React.FC<{
   durationInFrames: number;
   inFrames: number;
   outFrames: number;
+  audio: boolean;
   children: React.ReactNode;
-}> = ({ durationInFrames, inFrames, outFrames, children }) => {
+}> = ({ durationInFrames, inFrames, outFrames, audio, children }) => {
   const frame = useCurrentFrame();
   const opacity = fadeOpacity({ frame, durationInFrames, inFrames, outFrames });
+  const parentGain = useFadeGain();
 
-  return <AbsoluteFill style={{ opacity }}>{children}</AbsoluteFill>;
+  return (
+    <AbsoluteFill style={{ opacity }}>
+      {audio ? (
+        <FadeGainContext.Provider
+          value={
+            parentGain *
+            fadeGain({ frame, durationInFrames, inFrames, outFrames })
+          }
+        >
+          {children}
+        </FadeGainContext.Provider>
+      ) : (
+        children
+      )}
+    </AbsoluteFill>
+  );
 };
 
 /**

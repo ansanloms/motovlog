@@ -193,7 +193,7 @@ layer 内の item の位置は次のいずれかで指定する。
 
 `at` と `after` は同時に指定できない。時間はすべて秒で書く。
 
-演出は `fade(node, options)`・`cut(node, options)` の 2 つ。`options` は上記の位置指定に加え、`duration` (表示秒数)、`fade` はさらに `in`・`out` (フェードイン・アウトの秒数、既定 0) を持つ。
+演出は `fade(node, options)`・`cut(node, options)` の 2 つ。`options` は上記の位置指定に加え、`duration` (表示秒数)、`fade` はさらに `in`・`out` (フェードイン・アウトの秒数、既定 0)・`audio` (既定 false。true で in/out の曲線を下にある要素の音量にも掛ける。塊を包めば塊全体の音に掛かる。`frame()` には指定できない) を持つ。
 
 layer 内の item と item の間には `crossfade({ duration })` を置ける。直後の item は直前の終端から遷移の尺だけ戻って始まり、その区間で重なる (直後の item に `at`/`after` は書けない)。`timeline()` は、遷移が layer の先頭・末尾にある、遷移が連続する、遷移の尺が前後どちらかの item の尺より長い、遷移が 1 フレームに満たない、直前の item が `out` を持つ `fade` である、前後どちらかが `frame()` の item である、のいずれかで throw する。`fade(frame(), options)` は下の layer の合成結果にフェードをかける (layer 0 には置けない)。`at` には `start(item, offset?)` / `end(item, offset?)` で、どの layer に置かれた item でも開始・終端を基準にした位置を渡せる。`timeline()` は item 間の依存関係の順で解決する (配列の順とは限らない) ため layer をまたいだ参照方向は問わないが、参照が循環している (同じ layer の後ろの item への参照も循環になる) か、どの layer にも置かれていない item を指すと throw する。尺は `duration` (秒数) の代わりに `until: number | Anchor` (終端の絶対秒または Anchor、`duration` とは排他) も指定できる。開始位置を解決した後に `duration = until − 開始` を求めるため、他の item の終端に合わせて尺を決められる (例: `fade(figure, { at: 0, until: end(line, 0.5) })`)。
 
@@ -229,7 +229,7 @@ export default timeline([[cut(chapter1, { at: 0 })]]);
 
 `volume` は一定値 (数値、0 以上 1 以下) または折れ線 (`{ at, volume }[]`、各点の `volume` も 0 以上 1 以下) で指定する。`at` は要素の再生開始 (`trimBefore` 適用後) からの秒で、点の間は線形補間する。最初の点より前は最初の点の値、最後の点より後は最後の点の値でクランプする。省略時は 1。`audio()` の `loop` と折れ線を併用しても `at` は周回をまたいだ通算秒として扱う (`loopVolumeCurveBehavior="extend"`)。
 
-`fade()`・`crossfade()` は不透明度にだけ効き、音には効かない。`audio()` を `fade()` で包んでも音量は変わらず、`crossfade()` の重なり区間は両方の要素の音がそのまま重なる。音のフェードは `volume` の折れ線で書く。
+`fade()` は既定では不透明度にだけ効き、音には効かない。`audio: true` を付けると in/out と同じ区間で 0 から 1 へ動く音量の率 (音は両端で無音に届く) を下にある要素 (`video()`・`audio()`・発話) の音量にも掛ける。`crossfade()` は不透明度にだけ効き、重なり区間は両方の要素の音がそのまま重なる。音だけを別の形で動かすときは `volume` の折れ線で書く。
 
 見た目 (色・書体・配置) は `docs/design/tone-and-manner.md` ([ADR-0004](docs/adr/0004-define-tone-and-manner.md)) で固定する。配置のトークンと演出の秒数 (`chapterTiming`・`openingTiming` 等) は `motovlog-template/theme` の定数を使い、カラーパレットは利用側の `theme/index.ts` が持つ ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。timeline.ts にはこれらの値をハードコードせず theme を import する ([ADR-0005](docs/adr/0005-fix-look-in-theme-not-timeline.md))。
 

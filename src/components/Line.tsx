@@ -1,7 +1,9 @@
 import { Audio } from "@remotion/media";
 import React from "react";
+import { useVideoConfig } from "remotion";
 import { displayText } from "../voice/reading.ts";
 import { Subtitle } from "./Subtitle.tsx";
+import { useVolumeProp } from "./volume.ts";
 
 /** Line が受け取るもの。 */
 type Props = {
@@ -16,10 +18,13 @@ type Props = {
  * の Audio) を重ねる。src が無ければ Audio を描かない (声無しの発話)。
  */
 export const Line: React.FC<Props> = ({ text, src }) => {
+  const { fps } = useVideoConfig();
+  const volumeProp = useVolumeProp(1, fps);
+
   return (
     <>
       <Subtitle text={displayText(text)} />
-      {src !== undefined && <Audio src={src} />}
+      {src !== undefined && <Audio src={src} volume={volumeProp} />}
     </>
   );
 };

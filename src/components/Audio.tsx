@@ -1,7 +1,7 @@
 import { Audio as MediaAudio } from "@remotion/media";
 import React from "react";
 import { useVideoConfig } from "remotion";
-import { toVolumeProp, type Volume } from "./volume.ts";
+import { useVolumeProp, type Volume } from "./volume.ts";
 
 /** Audio が受け取るもの。 */
 type Props = {
@@ -32,10 +32,7 @@ export const Audio: React.FC<Props> = ({
   loop = false,
 }) => {
   const { fps } = useVideoConfig();
-  const volumeProp = React.useMemo(
-    () => toVolumeProp(volume, fps),
-    [volume, fps],
-  );
+  const volumeProp = useVolumeProp(volume, fps);
 
   return (
     <MediaAudio

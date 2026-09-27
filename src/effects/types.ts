@@ -96,6 +96,11 @@ export type FadeItem = Placement & {
   /** フェードアウトの尺 (秒)。0 ならフェードなし。 */
   readonly out: number;
   /**
+   * true なら in/out の曲線を、この item の下にある要素の音量にも掛ける。
+   * 既定 false (不透明度だけ)。
+   */
+  readonly audio: boolean;
+  /**
    * narration() が入力 item から作った item が指す、元の入力 item
    * (narration() に渡した item 自体)。resolveLayer() は解決結果を
    * source にも登録し、start()/end() で元の item を参照できるようにする。

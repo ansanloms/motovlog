@@ -70,6 +70,34 @@ describe("timeline", () => {
     expect(() => fade(null, { duration: 1, out: -1 })).toThrow();
   });
 
+  it("fade の audio は省略時 false になる", () => {
+    const item = fade(null, { duration: 1 });
+
+    expect(item.audio).toBe(false);
+  });
+
+  it("fade の audio: true は保持される", () => {
+    const item = fade(null, { duration: 1, audio: true });
+
+    expect(item.audio).toBe(true);
+  });
+
+  it("fade の audio が非 boolean なら throw する", () => {
+    expect(() =>
+      fade(null, {
+        duration: 1,
+        // @ts-expect-error 非 boolean を渡す検査
+        audio: "yes",
+      }),
+    ).toThrow();
+  });
+
+  it("fade(frame(), { audio: true }) は throw する", () => {
+    expect(() => fade(frame(), { duration: 1, audio: true })).toThrow(
+      /frame\(\) には audio を指定できません/,
+    );
+  });
+
   it("at と after を同時に指定すると throw する (cut)", () => {
     const item = {
       kind: "cut",
