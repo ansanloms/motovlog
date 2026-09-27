@@ -582,6 +582,7 @@ export const narration = async (
               at: resolved.at,
               in: original.in,
               out: original.out,
+              audio: original.audio,
               source: original,
             }
           : {

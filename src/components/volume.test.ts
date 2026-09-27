@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertVolume, toVolumeProp, volumeAt } from "./volume.ts";
+import { applyGain, assertVolume, toVolumeProp, volumeAt } from "./volume.ts";
 
 describe("volumeAt", () => {
   it("2 点フェードの中間値", () => {
@@ -131,5 +131,35 @@ describe("assertVolume", () => {
         { at: 1, volume: 0 },
       ]),
     ).not.toThrow();
+  });
+});
+
+describe("applyGain", () => {
+  it("数値の volumeProp に率を掛ける", () => {
+    expect(applyGain(0.8, 0.5)).toBe(0.4);
+  });
+
+  it("関数の volumeProp に率を掛ける", () => {
+    const prop = applyGain((frame: number) => frame / 10, 0.5);
+
+    if (typeof prop !== "function") {
+      throw new Error("prop は関数のはず");
+    }
+
+    expect(prop(4)).toBe(0.2);
+  });
+
+  it("率が 1 なら同じ参照を返す", () => {
+    const numberProp = 0.8;
+    const functionProp = (frame: number) => frame / 10;
+
+    expect(applyGain(numberProp, 1)).toBe(numberProp);
+    expect(applyGain(functionProp, 1)).toBe(functionProp);
+  });
+
+  it("率が範囲外なら throw する", () => {
+    expect(() => applyGain(0.8, -0.1)).toThrow();
+    expect(() => applyGain(0.8, 1.1)).toThrow();
+    expect(() => applyGain(0.8, Number.NaN)).toThrow();
   });
 });

@@ -1,3 +1,6 @@
+import { useMemo } from "react";
+import { useFadeGain } from "../fadeGain.ts";
+
 /** 音量の折れ線の 1 点。at は要素の再生開始 (trimBefore 適用後) からの秒。 */
 export type VolumePoint = { readonly at: number; readonly volume: number };
 
@@ -95,4 +98,44 @@ export const toVolumeProp = (
   }
 
   return (frame: number) => volumeAt(volume, frame / fps);
+};
+
+/**
+ * volume prop (toVolumeProp() の戻り値) に、fade の audio: true が下ろす
+ * 音量の率 (gain、0 以上 1 以下) を掛ける。gain が 1 ならそのまま (同一
+ * 参照) を返す。
+ */
+export const applyGain = (
+  volumeProp: number | ((frame: number) => number),
+  gain: number,
+): number | ((frame: number) => number) => {
+  if (!Number.isFinite(gain) || gain < 0 || gain > 1) {
+    throw new Error(`applyGain: gain が不正です (${gain})`);
+  }
+
+  if (gain === 1) {
+    return volumeProp;
+  }
+
+  return typeof volumeProp === "number"
+    ? volumeProp * gain
+    : (frame: number) => volumeProp(frame) * gain;
+};
+
+/**
+ * volume (一定値または折れ線) に FadeGainContext の gain を掛けた volume prop
+ * を返す hook。Audio・Video・Line が個別に持っていた
+ * `useFadeGain()` + `useMemo(() => applyGain(toVolumeProp(...), gain), ...)`
+ * を集約したもの。
+ */
+export const useVolumeProp = (
+  volume: Volume,
+  fps: number,
+): number | ((frame: number) => number) => {
+  const gain = useFadeGain();
+
+  return useMemo(
+    () => applyGain(toVolumeProp(volume, fps), gain),
+    [volume, fps, gain],
+  );
 };

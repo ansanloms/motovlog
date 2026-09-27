@@ -78,6 +78,34 @@ export const fadeOpacity = (params: {
 };
 
 /**
+ * フェードの音量の率 (gain、0〜1)。音量用。fadeOpacity と違い両端で 0 に
+ * 届く (最初と最後のフレームが無音)。in 区間は `frame / inFrames` (frame=0
+ * で 0、frame=inFrames で 1)、out 区間は `(durationInFrames - 1 - frame) /
+ * outFrames` (最後のフレームで 0) の直線で、両者の min を返す (区間長 0 の
+ * ときはそちら側を常に 1 とみなす)。
+ */
+export const fadeGain = (params: {
+  /** 区間先頭からのフレーム番号 (0 起点)。 */
+  frame: number;
+  /** 区間の尺 (フレーム数)。 */
+  durationInFrames: number;
+  /** フェードインの尺 (フレーム数)。0 ならフェードなし。 */
+  inFrames: number;
+  /** フェードアウトの尺 (フレーム数)。0 ならフェードなし。 */
+  outFrames: number;
+}): number => {
+  const { frame, durationInFrames, inFrames, outFrames } = params;
+
+  const inRatio = inFrames > 0 ? frame / inFrames : 1;
+  const outRatio =
+    outFrames > 0 ? (durationInFrames - 1 - frame) / outFrames : 1;
+
+  const ratio = Math.min(inRatio, outRatio);
+
+  return Math.min(1, Math.max(0, ratio));
+};
+
+/**
  * frame() の item (FrameEffects が包む対象) の列から、指定フレームでの
  * 合成 opacity を計算する。同じ layer の frame() の item は時間が重ならな
  * いため、区間内の item は高々 1 つで、その item の fadeOpacity を返す。

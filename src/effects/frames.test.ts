@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
   toFrame,
@@ -155,6 +156,64 @@ describe("fadeOpacity", () => {
         outFrames: 0,
       }),
     ).toBe(1);
+  });
+});
+
+describe("fadeGain", () => {
+  it("in/out が 0 なら常に 1", () => {
+    expect(
+      fadeGain({ frame: 0, durationInFrames: 10, inFrames: 0, outFrames: 0 }),
+    ).toBe(1);
+    expect(
+      fadeGain({ frame: 9, durationInFrames: 10, inFrames: 0, outFrames: 0 }),
+    ).toBe(1);
+  });
+
+  it("in 区間の最初のフレームは 0、inFrames で 1", () => {
+    expect(
+      fadeGain({ frame: 0, durationInFrames: 10, inFrames: 4, outFrames: 0 }),
+    ).toBe(0);
+    expect(
+      fadeGain({ frame: 4, durationInFrames: 10, inFrames: 4, outFrames: 0 }),
+    ).toBe(1);
+  });
+
+  it("out 区間の最後のフレームは 0", () => {
+    expect(
+      fadeGain({ frame: 9, durationInFrames: 10, inFrames: 0, outFrames: 4 }),
+    ).toBe(0);
+  });
+
+  it("中央のフレームは 1", () => {
+    expect(
+      fadeGain({ frame: 5, durationInFrames: 10, inFrames: 4, outFrames: 4 }),
+    ).toBe(1);
+  });
+
+  it("in と out が重なる区間は min 側が効く", () => {
+    expect(
+      fadeGain({ frame: 5, durationInFrames: 10, inFrames: 6, outFrames: 6 }),
+    ).toBeLessThan(1);
+  });
+
+  it("fadeOpacity との差は両端だけ (中央以降は同じ)", () => {
+    const params = { durationInFrames: 10, inFrames: 4, outFrames: 4 };
+
+    expect(fadeGain({ frame: 0, ...params })).not.toBe(
+      fadeOpacity({ frame: 0, ...params }),
+    );
+    expect(fadeGain({ frame: 0, ...params })).toBe(0);
+    expect(fadeOpacity({ frame: 0, ...params })).toBeGreaterThan(0);
+
+    expect(fadeGain({ frame: 9, ...params })).not.toBe(
+      fadeOpacity({ frame: 9, ...params }),
+    );
+    expect(fadeGain({ frame: 9, ...params })).toBe(0);
+    expect(fadeOpacity({ frame: 9, ...params })).toBeGreaterThan(0);
+
+    expect(fadeGain({ frame: 5, ...params })).toBe(
+      fadeOpacity({ frame: 5, ...params }),
+    );
   });
 });
 
