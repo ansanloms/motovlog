@@ -48,12 +48,7 @@ import {
   start,
   timeline,
 } from "../../src/effects/index.ts";
-import {
-  chapterDurationSec,
-  chapterTiming,
-  endingTiming,
-  openingTiming,
-} from "../../src/theme/index.ts";
+import { chapterDurationSec, chapterTiming } from "../../src/theme/index.ts";
 import { narrator } from "../../theme/index.ts";
 
 const asset = (path: string) => staticFile(`projects/00000000-sample/${path}`);
@@ -64,6 +59,11 @@ const clipASec = 20;
 const clipBSec = 18;
 const crossfadeSec = 0.4;
 const endingFadeSec = 2; // layer 5 の黒落ちと走行音・BGM のフェードアウトの秒数
+// OP・ED の尺は動画ごとに決める (ADR-0005)。T&M「画面配置」の既定値
+// (OP 4.8 秒、黒から 0.4 秒フェードイン、ED 12 秒) を使う。
+const openingSec = 4.8;
+const openingFadeInSec = 0.4;
+const endingSec = 12;
 
 // 走行映像は同じ素材を trimBefore (元動画の頭を捨てる秒数) だけ変えて 2 本に
 // 割り、間に crossfade() を挟んでいる。cut()/fade() が返す item は変数に
@@ -73,7 +73,7 @@ const endingFadeSec = 2; // layer 5 の黒落ちと走行音・BGM のフェー�
 // volume は要素の再生開始 (trimBefore 適用後) からの秒を at に持つ折れ線。
 // fade()・crossfade()・frame() は絵 (不透明度) にだけ効いて音には効かない
 // ので、走行音のフェードはここで書く。clipA の頭は layer 5 の黒からの
-// 立ち上がり (openingTiming.fadeIn) と、clipA の末尾と clipB の頭は
+// 立ち上がり (openingFadeInSec) と、clipA の末尾と clipB の頭は
 // crossfade の重なり (crossfadeSec) と、clipB の末尾は layer 5 の黒落ち
 // (endingFadeSec) と、それぞれ同じ秒数にして絵と音を揃えている。一定値
 // なら `volume: 0.5` のように数値で書く。
@@ -83,7 +83,7 @@ const clipA = cut(
     trimBefore: 0,
     volume: [
       { at: 0, volume: 0 },
-      { at: openingTiming.fadeIn, volume: 1 },
+      { at: openingFadeInSec, volume: 1 },
       { at: clipASec - crossfadeSec, volume: 1 },
       { at: clipASec, volume: 0 },
     ],
@@ -129,7 +129,7 @@ const calm = { ...narrator, speed: 0.9 };
 // 3 本すべてを figure() (ADR-0014) の括りに入れ、立ち絵を出したまま並べる。
 // lead・tail は OP → (0.2 秒) → 章タイトルが終わるまで立ち絵を消しておき
 // (点滅を避けるため、間の 0.2 秒も出さない)、ED が始まる直前 (clipB の終端 −
-// endingTiming.duration) で消す (T&M「画面配置」) 位置に合わせて計算した値。
+// endingSec) で消す (T&M「画面配置」) 位置に合わせて計算した値。
 //
 // 1 本目: voice を省略すると by.voice (sampleCharacter では theme の narrator) の
 // ままになる。{漢字|よみ} で読みを添えられる。at は塊の先頭からの相対秒。
@@ -202,7 +202,7 @@ export default timeline([
         title: "浄土平まで\n走ってきた",
         by: sampleCharacter,
       }),
-      { duration: openingTiming.duration },
+      { duration: openingSec },
     ),
     // 章タイトル。after は直前の item (OP) の終端からの相対秒。
     fade(chapter({ title: "浄土平へ", subtitle: "CHAPTER 1" }), {
@@ -220,9 +220,9 @@ export default timeline([
       }),
       { at: start(clipB, 1), duration: 5 },
     ),
-    // ED。at に end(item, offset?) で「clipB の終端の endingTiming.duration
-    // 秒前」を渡し、走行映像の終わりにちょうど合わせている。カットイン
-    // (フェード無し) なので cut() を使う。
+    // ED。at に end(item, offset?) で「clipB の終端の endingSec 秒前」を
+    // 渡し、走行映像の終わりにちょうど合わせている。カットイン (フェード
+    // 無し) なので cut() を使う。
     cut(
       ending({
         title: "浄土平まで走ってきた",
@@ -237,8 +237,8 @@ export default timeline([
         credits: [{ VOICEVOX: "青山龍星" }],
       }),
       {
-        at: end(clipB, -endingTiming.duration),
-        duration: endingTiming.duration,
+        at: end(clipB, -endingSec),
+        duration: endingSec,
       },
     ),
   ],
@@ -289,8 +289,8 @@ export default timeline([
     // 置けない)、それより下の layer の合成結果にフェードをかける。
     // end(clipB, -endingFadeSec) は「clipB の終端の endingFadeSec 秒前」。
     fade(frame(), {
-      duration: openingTiming.fadeIn,
-      in: openingTiming.fadeIn,
+      duration: openingFadeInSec,
+      in: openingFadeInSec,
     }),
     fade(frame(), {
       at: end(clipB, -endingFadeSec),

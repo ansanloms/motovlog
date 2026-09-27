@@ -36,7 +36,7 @@ lib (動画を作る機能) は次の 2 つ。
 | `motovlog-template/effects`      | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group` |
 | `motovlog-template/components`   | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending` 等)                |
 | `motovlog-template/compositions` | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                  |
-| `motovlog-template/theme`        | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`openingTiming`・`fps` 等)        |
+| `motovlog-template/theme`        | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)      |
 
 このリポジトリの中の利用側ファイルは、同じ 5 つの入口を相対パス (`../../src/effects/index.ts` 等) で import する。外部のリポジトリから依存として使う手順は「外部のリポジトリから使う」にある。
 
@@ -149,11 +149,7 @@ import { sample } from "../../characters/sample.ts";
 import { chapter, video } from "../../src/components/index.tsx";
 import { thumbnail } from "../../src/compositions/index.ts";
 import { cut, fade, timeline } from "../../src/effects/index.ts";
-import {
-  chapterDurationSec,
-  chapterTiming,
-  openingTiming,
-} from "../../src/theme/index.ts";
+import { chapterDurationSec, chapterTiming } from "../../src/theme/index.ts";
 
 const asset = (path: string) => staticFile(`projects/00000000-sample/${path}`);
 
@@ -171,7 +167,7 @@ export default timeline([
         title: "浄土平まで\n走ってきた",
         by: sample,
       }),
-      { duration: openingTiming.duration, in: openingTiming.fadeIn },
+      { duration: 4.8, in: 0.4 },
     ),
     fade(chapter({ title: "浄土平へ", subtitle: "CHAPTER 1" }), {
       after: 0.2,
@@ -182,6 +178,8 @@ export default timeline([
   ],
 ]);
 ```
+
+OP・ED の尺は動画ごとに timeline.ts で決める (上の例の `duration: 4.8, in: 0.4` のように直値で書く)。
 
 `timeline(layers, options?)` の `layers` は layer (item の配列) の配列。layer は z 順を表し、配列の後ろが上に重なる。layer 内の item は時間が重ならず、時間順に並べる (`crossfade` の遷移の尺だけ重なるのが唯一の例外)。`options` は `width`・`height` のみ (既定 1920×1080)。fps は project ごとに指定せず、`motovlog-template/theme` の `fps` を使う。
 
@@ -231,7 +229,7 @@ export default timeline([[cut(chapter1, { at: 0 })]]);
 
 `fade()` は既定では不透明度にだけ効き、音には効かない。`audio: true` を付けると in/out と同じ区間で 0 から 1 へ動く音量の率 (音は両端で無音に届く) を下にある要素 (`video()`・`audio()`・発話) の音量にも掛ける。`crossfade()` も既定では不透明度にだけ効き、重なり区間は両方の要素の音がそのまま重なる。`audio: true` を付けると重なり区間の音を等パワー曲線で交差させる。音だけを別の形で動かすときは `volume` の折れ線で書く。
 
-見た目 (色・書体・配置) は `docs/design/tone-and-manner.md` ([ADR-0004](docs/adr/0004-define-tone-and-manner.md)) で固定する。配置のトークンと演出の秒数 (`chapterTiming`・`openingTiming` 等) は `motovlog-template/theme` の定数を使い、カラーパレットは利用側の `theme/index.ts` が持つ ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。timeline.ts にはこれらの値をハードコードせず theme を import する ([ADR-0005](docs/adr/0005-fix-look-in-theme-not-timeline.md))。
+見た目 (色・書体・配置) は `docs/design/tone-and-manner.md` ([ADR-0004](docs/adr/0004-define-tone-and-manner.md)) で固定する。配置のトークンと演出の秒数 (`chapterTiming`・`characterTiming` 等) は `motovlog-template/theme` の定数を使い、カラーパレットは利用側の `theme/index.ts` が持つ ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。timeline.ts にはこれらの値をハードコードせず theme を import する ([ADR-0005](docs/adr/0005-fix-look-in-theme-not-timeline.md))。OP・ED の尺だけは動画ごとに timeline.ts で決める。
 
 ### 発話
 

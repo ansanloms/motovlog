@@ -28,10 +28,6 @@ export const characterTiming = {
   lead: 1, // 立ち絵の括りの既定の前後の余白 (秒)。括りの先頭の行より前に出す秒数
   tail: 1, // 立ち絵の括りの既定の前後の余白 (秒)。括りの末尾の行の字幕の終端より後に残す秒数
 } as const;
-/** OP の尺とフェードイン秒 (黒地から)。フェードアウトは無し。 */
-export const openingTiming = { duration: 4.8, fadeIn: 0.4 } as const; // 黒から 0.4 秒
-/** ED の尺。カットイン、フェードなし。 */
-export const endingTiming = { duration: 12 } as const; // カットイン、フェードなし
 
 /** 章タイトルの表示尺 (フェードイン + 保持 + フェードアウト)。 */
 export const chapterDurationSec = chapterTiming.fade * 2 + chapterTiming.hold;

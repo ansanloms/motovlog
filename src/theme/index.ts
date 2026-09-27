@@ -17,9 +17,7 @@ export {
   chapterDurationSec,
   chapterTiming,
   characterTiming,
-  endingTiming,
   fps,
-  openingTiming,
   subtitleTiming,
 } from "./timing.ts";
 export type { Narrator } from "./voice.ts";
