@@ -106,6 +106,46 @@ export const fadeGain = (params: {
 };
 
 /**
+ * 等パワーの率。ratio (0〜1、範囲外はクランプ) を等パワー曲線に通す。
+ * 補完し合う 2 本 (ratio と 1 − ratio) の二乗和が 1 になり、相関の無い
+ * 音を交差させても中央で痩せない。
+ */
+export const equalPowerGain = (ratio: number): number => {
+  const clamped = Math.min(1, Math.max(0, ratio));
+
+  return Math.sin((clamped * Math.PI) / 2);
+};
+
+/**
+ * crossfade の音量用の率 (gain、0〜1)。in は fadeOpacity と同じ比
+ * (`(frame + 1) / inFrames`、inFrames − 1 番目のフレームで 1)、out は
+ * fadeGain と同じ比 (`(durationInFrames - 1 - frame) / outFrames`、最後の
+ * フレームで 0) を求め (区間長 0 のときはそちら側を常に 1 とみなし、両者の
+ * min を取る)、等パワー曲線 (equalPowerGain) に通して返す。対になる入る側
+ * と出る側の比の和が 1 になるため、等パワーの二乗和が 1 に保たれる。
+ */
+export const crossfadeGain = (params: {
+  /** 区間先頭からのフレーム番号 (0 起点)。 */
+  frame: number;
+  /** 区間の尺 (フレーム数)。 */
+  durationInFrames: number;
+  /** crossfade で入る側の尺 (フレーム数)。0 なら対象外。 */
+  inFrames: number;
+  /** crossfade で出る側の尺 (フレーム数)。0 なら対象外。 */
+  outFrames: number;
+}): number => {
+  const { frame, durationInFrames, inFrames, outFrames } = params;
+
+  const inRatio = inFrames > 0 ? (frame + 1) / inFrames : 1;
+  const outRatio =
+    outFrames > 0 ? (durationInFrames - 1 - frame) / outFrames : 1;
+
+  const ratio = Math.min(inRatio, outRatio);
+
+  return equalPowerGain(ratio);
+};
+
+/**
  * frame() の item (FrameEffects が包む対象) の列から、指定フレームでの
  * 合成 opacity を計算する。同じ layer の frame() の item は時間が重ならな
  * いため、区間内の item は高々 1 つで、その item の fadeOpacity を返す。

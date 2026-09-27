@@ -20,6 +20,11 @@ export type Transition = {
   readonly kind: "crossfade";
   /** 遷移の尺 (秒)。 */
   readonly duration: number;
+  /**
+   * true なら重なり区間で入る側の音量を 0 から 1、出る側を 1 から 0 に
+   * 等パワー曲線で交差させる。既定 false (不透明度だけ)。
+   */
+  readonly audio: boolean;
 };
 
 /**

@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  crossfadeGain,
+  equalPowerGain,
   fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
@@ -214,6 +216,103 @@ describe("fadeGain", () => {
     expect(fadeGain({ frame: 5, ...params })).toBe(
       fadeOpacity({ frame: 5, ...params }),
     );
+  });
+});
+
+describe("equalPowerGain", () => {
+  it("0 は 0、1 は 1", () => {
+    expect(equalPowerGain(0)).toBe(0);
+    expect(equalPowerGain(1)).toBe(1);
+  });
+
+  it("0.5 は約 0.7071 (sin(π/4))", () => {
+    expect(equalPowerGain(0.5)).toBeCloseTo(Math.SQRT1_2);
+  });
+
+  it("r と 1 − r の二乗和は 1 (等パワー)", () => {
+    const r = 0.3;
+    const sum = equalPowerGain(r) ** 2 + equalPowerGain(1 - r) ** 2;
+
+    expect(sum).toBeCloseTo(1);
+  });
+
+  it("範囲外はクランプする", () => {
+    expect(equalPowerGain(-1)).toBe(0);
+    expect(equalPowerGain(2)).toBe(1);
+  });
+});
+
+describe("crossfadeGain", () => {
+  it("in 区間の最初のフレームは equalPowerGain(1/inFrames)、inFrames - 1 で 1", () => {
+    expect(
+      crossfadeGain({
+        frame: 0,
+        durationInFrames: 10,
+        inFrames: 4,
+        outFrames: 0,
+      }),
+    ).toBeCloseTo(equalPowerGain(1 / 4));
+    expect(
+      crossfadeGain({
+        frame: 3,
+        durationInFrames: 10,
+        inFrames: 4,
+        outFrames: 0,
+      }),
+    ).toBe(1);
+  });
+
+  it("out 区間の最後のフレームは 0", () => {
+    expect(
+      crossfadeGain({
+        frame: 9,
+        durationInFrames: 10,
+        inFrames: 0,
+        outFrames: 4,
+      }),
+    ).toBe(0);
+  });
+
+  it("in/out が 0 なら常に 1", () => {
+    expect(
+      crossfadeGain({
+        frame: 0,
+        durationInFrames: 10,
+        inFrames: 0,
+        outFrames: 0,
+      }),
+    ).toBe(1);
+    expect(
+      crossfadeGain({
+        frame: 9,
+        durationInFrames: 10,
+        inFrames: 0,
+        outFrames: 0,
+      }),
+    ).toBe(1);
+  });
+
+  it("対になる入る側と出る側の二乗和が 1 (等パワー)", () => {
+    const durationOut = 30;
+
+    for (const inFrames of [3, 12]) {
+      for (let f = 0; f < inFrames; f += 1) {
+        const gainIn = crossfadeGain({
+          frame: f,
+          durationInFrames: 30,
+          inFrames,
+          outFrames: 0,
+        });
+        const gainOut = crossfadeGain({
+          frame: durationOut - inFrames + f,
+          durationInFrames: durationOut,
+          inFrames: 0,
+          outFrames: inFrames,
+        });
+
+        expect(gainIn ** 2 + gainOut ** 2).toBeCloseTo(1);
+      }
+    }
   });
 });
 

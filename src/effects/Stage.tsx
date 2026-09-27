@@ -5,6 +5,7 @@ import { getSetup } from "../setup.ts";
 import { ThemeRoot } from "../theme/index.ts";
 import { isFrame } from "./frame.ts";
 import {
+  crossfadeGain,
   fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
@@ -40,7 +41,11 @@ const isFrameItem = (
  * フェード付きの `<AbsoluteFill>`、cut はフェード無しの `<AbsoluteFill>` に
  * 変換する。`crossfade` で直前と繋がる item は、その内側を `<FadeLayer>` で
  * 包み遷移区間の opacity を 0 から 1 に上げる (fade の場合は FadeLayer の
- * 外側に置き、乗算にする)。`frame()` を含む layer は、それより下の layer の
+ * 外側に置き、乗算にする)。`crossfade` の `audio: true` は、入る側・出る側
+ * それぞれの `<GainLayer>` で重なり区間の音量の率を等パワー曲線で交差させる
+ * (出る側は次の item の `transitionIn` で特定する。crossfade は解決結果の
+ * 配列に入らないため隣接する item が対になる)。`frame()` を含む layer は、
+ * それより下の layer の
  * 合成結果を `<FrameEffects>` で包む (AviUtl のフレームバッファ型。塊の中に
  * `frame()` は置けない (resolveLayer が throw する) ため、groupFrom !== 0
  * の呼び出しでは現れない)。`sample()` の item は `<Sampled>` が毎フレーム
@@ -102,6 +107,40 @@ const renderLayers = (
               <AbsoluteFill>{node}</AbsoluteFill>
             );
 
+          // crossfade の出る側は、この layer の解決結果 (nodeItems) で
+          // 自分の直後にある item の transitionIn で特定する。crossfade
+          // 自体は解決結果の配列に入らないため、隣接する item が対になる。
+          const overlapIn = item.transitionIn
+            ? transitionFrames({
+                at: item.at,
+                duration: item.transitionIn.duration,
+                fps,
+              })
+            : 0;
+          const next = nodeItems[itemIndex + 1];
+
+          const gainInFrames = item.transitionIn?.audio ? overlapIn : 0;
+          const gainOutFrames = next?.transitionIn?.audio
+            ? transitionFrames({
+                at: next.at,
+                duration: next.transitionIn.duration,
+                fps,
+              })
+            : 0;
+
+          const bodyWithGain =
+            gainInFrames > 0 || gainOutFrames > 0 ? (
+              <GainLayer
+                durationInFrames={durationInFrames}
+                inFrames={gainInFrames}
+                outFrames={gainOutFrames}
+              >
+                {body}
+              </GainLayer>
+            ) : (
+              body
+            );
+
           return (
             <Sequence
               key={itemIndex}
@@ -112,18 +151,14 @@ const renderLayers = (
               {item.transitionIn ? (
                 <FadeLayer
                   durationInFrames={durationInFrames}
-                  inFrames={transitionFrames({
-                    at: item.at,
-                    duration: item.transitionIn.duration,
-                    fps,
-                  })}
+                  inFrames={overlapIn}
                   outFrames={0}
                   audio={false}
                 >
-                  {body}
+                  {bodyWithGain}
                 </FadeLayer>
               ) : (
-                body
+                bodyWithGain
               )}
             </Sequence>
           );
@@ -218,6 +253,32 @@ const FadeLayer: React.FC<{
         children
       )}
     </AbsoluteFill>
+  );
+};
+
+/**
+ * crossfade (audio: true) の重なり区間で、音量の率 (gain、crossfadeGain。
+ * 等パワー曲線) を FadeGainContext に配る (親から受け継いだ gain との乗算)。
+ * FadeLayer と違い opacity・AbsoluteFill は持たない (率を配るだけ)。
+ */
+const GainLayer: React.FC<{
+  durationInFrames: number;
+  inFrames: number;
+  outFrames: number;
+  children: React.ReactNode;
+}> = ({ durationInFrames, inFrames, outFrames, children }) => {
+  const frame = useCurrentFrame();
+  const parentGain = useFadeGain();
+
+  return (
+    <FadeGainContext.Provider
+      value={
+        parentGain *
+        crossfadeGain({ frame, durationInFrames, inFrames, outFrames })
+      }
+    >
+      {children}
+    </FadeGainContext.Provider>
   );
 };
 

@@ -187,6 +187,7 @@ describe("timeline: 塊 (group)", () => {
     expect(result.layers[0][1].transitionIn).toEqual({
       kind: "crossfade",
       duration: 0.4,
+      audio: false,
     });
   });
 

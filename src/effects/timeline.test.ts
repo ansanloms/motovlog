@@ -221,8 +221,34 @@ describe("timeline: crossfade", () => {
     expect(result.layers[0][1].transitionIn).toEqual({
       kind: "crossfade",
       duration: 0.4,
+      audio: false,
     });
     expect(result.durationSec).toBeCloseTo(5 + 3 - 0.4);
+  });
+
+  it("crossfade() は audio を省略すると false になる", () => {
+    expect(crossfade({ duration: 0.4 }).audio).toBe(false);
+  });
+
+  it("crossfade() は audio: true を保持する", () => {
+    const a = cut(null, { duration: 5 });
+    const b = cut(null, { duration: 3 });
+
+    const result = timeline([
+      [a, crossfade({ duration: 0.4, audio: true }), b],
+    ]);
+
+    expect(result.layers[0][1].transitionIn).toEqual({
+      kind: "crossfade",
+      duration: 0.4,
+      audio: true,
+    });
+  });
+
+  it("crossfade() は audio が boolean 以外だと throw する", () => {
+    expect(() =>
+      crossfade({ duration: 0.4, audio: "true" as unknown as boolean }),
+    ).toThrow(/audio は boolean で指定します/);
   });
 
   it("layer の先頭に crossfade があると throw する", () => {
