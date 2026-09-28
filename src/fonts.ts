@@ -5,6 +5,9 @@ import { loadFont } from "@remotion/google-fonts/NotoSansJP";
 const { fontFamily } = loadFont("normal", {
   weights: ["400", "500", "600", "700"],
   subsets: ["japanese"],
+  // 日本語サブセットは文字範囲ごとに分割配信されるため、4 ウェイトで 480 リクエストになる。
+  // ウェイトは T&M の定義で減らせないので、リクエスト数の警告だけを抑止する。
+  ignoreTooManyRequestsWarning: true,
 });
 
 export { fontFamily };
