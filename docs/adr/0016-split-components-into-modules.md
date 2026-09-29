@@ -30,6 +30,7 @@ lib の見た目のコンポーネントは `src/components/` に平らに置か
 2. npm workspaces で module ごとにパッケージを分ける — 却下。約 1365 行のコードのために、Remotion のバンドラが workspace のパッケージと CSS Modules を解決するか、パッケージの自己参照が通るかを検証し直す必要があり、コストが見合わない。
 3. `src/effects`・`src/compositions` も `modules/` に移す — 却下。これらはコンポーネントではなく層の DSL で、[ADR-0006](./0006-write-timeline-as-effects-dsl.md) と [ADR-0012](./0012-split-template-library-from-consumer.md) の層の規則がディレクトリ単位で書かれている。移しても 1 か所にまとまるファイルが増えず、層の境界の検査を書き直すことになる。
 4. 現状の `src/components/` を保つ — 却下。コンポーネント間の依存と共有部品への依存が区別されず、Driver 2 を満たさない。
+5. `Video` を `modules/core/` に移し、`modules/photo-showcase/` が `modules/video/` を import する例外を作らない — 却下。`video` は `motovlog/modules/video` として独立した公開面と要素ファクトリ (`video()`) を持つ、それ自体が公開 module である。`modules/core/` はコンポーネントではない共有部品 (`text.ts`・`volume.ts`・`previewSrc.ts`・`fadeGain.ts`) の置き場であり、1 行の import 例外を避けるためにコンポーネントを core に持ち上げると、その境界が曖昧になる。
 
 ## Decision
 
@@ -64,7 +65,7 @@ lib の見た目のコンポーネントは `src/components/` に平らに置か
 ### 依存の規則
 
 - `src/components/**` に課していた ESLint の規則 (effects を import しない、`remotion` から import できる名前を限る、`@remotion/media` 以外の `@remotion/*` を import しない、利用側を import しない) を `modules/**` にも課す。加えて `modules/**` は compositions を import しない。
-- `modules/<name>/` が import してよい他の module は `modules/core/` だけとする。`modules/core/` は他の module を import しない。
+- `modules/<name>/` が import してよい他の module は `modules/core/` だけとする。`modules/core/` は他の module を import しない。ただし `modules/photo-showcase/` は例外として `modules/video/` も import してよい (写真紹介が走行映像の `Video` を枠に重ねて合成するため)。認める cross-module 依存はこの 1 本だけとし、`modules/video/` は `modules/core/` 以外を import しないため循環にはならない。
 - 利用側 (`app/`・`theme/`・`projects/`) が import してよい module のファイルは `modules/<name>/index.ts` だけとする。`characters/<name>.ts` は module を import しない。
 
 ## Consequences
@@ -79,11 +80,12 @@ lib の見た目のコンポーネントは `src/components/` に平らに置か
 
 - 公開面が `motovlog/components` と `motovlog/modules/<name>` の 2 通りになり、同じ要素ファクトリを 2 つの経路で import できる。
 - module 間の依存の規則は、module の名前ごとに ESLint の設定ブロックを生成して検査する。module を足すと設定が増え、規則は import 文の文字列の前方一致による近似になる。
-- 他の module のコンポーネントを使いたい場合 (例: 写真紹介が走行映像の `Video` を使う) は、その部品を `modules/core/` に移すか、依存の規則を見直す必要がある。
+- `modules/photo-showcase/` だけ、`modules/core/` に加えて `modules/video/` への依存を例外として許可した (下記禁止事項)。他の module で同種の要求が出た場合も、原則は部品を `modules/core/` に移すことで対応し、個別の import 例外は増やさない。
+- 例外の一覧 (`eslint.config.mjs` の `MODULE_IMPORT_EXCEPTIONS`) に循環検知は無い。ESLint は module ごとに設定ブロックを生成して片方向だけを検査するため、逆方向の例外 (`video` → `photo-showcase`) を足しても lint では検出できない。循環を防ぐ歯止めはレビューとこの ADR であり、一覧は 1 件に保つ。
 
 ### 禁止事項
 
-- `modules/<name>/` が `modules/core/` 以外の module を import すること。
+- `modules/<name>/` が `modules/core/` 以外の module を import すること。ただし `modules/photo-showcase/` が `modules/video/` を import することは例外として許可する (写真紹介が走行映像の `Video` を枠に重ねて合成するため)。`modules/video/` は `modules/core/` 以外の module を import しないため、この例外を加えても循環 import にはならない。
 - `modules/core/` が他の module を import すること。
 - `modules/**` が `src/components/index.tsx` を import すること。理由: 全 module の要素ファクトリを再 export するため、経由すると他の module への依存と循環 import が生じる。
 - `modules/**` が `src/effects`・`src/compositions`・利用側 (`app/`・`theme/`・`projects/`・`characters/`) を import すること。
