@@ -3,6 +3,20 @@ import fs from "node:fs";
 import pkg from "./package.json" with { type: "json" };
 
 /**
+ * lib 内 (src/・modules/) から自パッケージ名 (bare specifier) で import する
+ * ことを禁じる patterns。exports 経由の自己参照は相対パスの検査 (下の各
+ * ブロック) と循環検査を通り抜ける。noConsumerImports に含めてあるため、
+ * lib の各ブロックは自動で継承する。
+ */
+const noSelfImports = [
+  {
+    group: [pkg.name, `${pkg.name}/*`, `${pkg.name}/**`],
+    message:
+      "lib 内から自パッケージ名で import すると境界の規則と循環検査を通り抜けるため、相対パスで import する (ADR-0012・ADR-0015)。",
+  },
+];
+
+/**
  * lib (src/) が利用側 (app/・theme/・projects/・characters/) を静的に import
  * することを禁じる patterns (ADR-0012 の禁止事項)。利用側の値は configure()
  * (src/setup.ts) で受け取る。
@@ -22,6 +36,7 @@ import pkg from "./package.json" with { type: "json" };
  *   抜ける)。prettier と既存の書き方が正規形なので、実務上はこれで足りる。
  */
 const noConsumerImports = (up) => [
+  ...noSelfImports,
   {
     group: ["**/app/**", "**/projects/**", "**/characters/**"],
     message:
