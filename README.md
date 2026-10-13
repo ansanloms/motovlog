@@ -27,7 +27,7 @@ lib (動画を作る機能) は次の 3 つ。
 - `public/projects/<slug>/`: 動画固有の素材 (変換済み素材・Studio 用プロキシ・セリフ音声等)。コミットしない
 - `public/assets/<種別>/`: 共通素材。`bgm`・`se`・`characters/<name>`・`fonts`。既定でコミットしない。再配布できる自作素材は `.gitignore` の否定パターンで明示してコミットする
 - `remotion.config.ts`: Remotion の設定。`Config.setEntryPoint("./app/index.ts")` で入口を指す
-- `<slug>` は `YYYYMMDD-<name>` (例: `20260813-jododaira`)。同梱のサンプルだけ `00000000-sample` を使う
+- `<slug>` は `YYYYMMDD-<name>`。同梱のサンプルだけ `00000000-sample` を使う
 
 利用側から lib を import してよいのは次の 5 つの入口と、各 module の入口 (`modules/<name>/index.ts`) だけで、それ以外の `src/`・`modules/` 配下を import すると ESLint が落とす。
 
@@ -152,7 +152,7 @@ BGM (`assets/bgm/m1.wav`) が無い場合は、サンプルの BGM layer (layer 
 
 素材を置けば Studio と render が動く (`REMOTION_PROJECT` は未設定でよく、既定でこのサンプルを読む)。
 
-`projects/20260813-jododaira/` は実際の走行から起こした project で、サンプルと違い第三者制作の立ち絵を使う `characters/ryusei.ts` を参照する。立ち絵 (`public/assets/characters/ryusei/`) と走行映像・写真はコミットしていないため、これらが手元に無い環境ではこの project を render できない。
+実際の動画の project は利用側のリポジトリ (例: private の `ansanloms/motovlog-project`) に置く ([ADR-0019](docs/adr/0019-distribute-lib-by-git-tag-and-split-video-projects.md))。
 
 ## timeline.ts の書き方
 
@@ -341,7 +341,7 @@ ED・サムネ用フレームの絵は要素ファクトリで置けるが、ED 
 変換済み素材に加えて `public/projects/<slug>/<basename>.preview.mp4` (Studio 用プロキシ) を作る ([ADR-0013](docs/adr/0013-add-preview-proxy-for-studio.md))。`npm run dev` (Remotion Studio) はこのプロキシを読み、`remotion render` は変換済み素材 (本体) を読む。
 
 - プロキシは変換済み素材から生成する H.264 で、既定は 540p。`.env` の `PREVIEW_HEIGHT` (2 以上の偶数) で解像度を変えられる。`npm run dev` と同じく `npm run convert` も `.env` を読む。
-- 既に変換済み素材だけがある project にプロキシを追加するときは、変換済み素材自身を入力にして `npm run convert` を再実行する。例: `npm run convert -- 20260813-jododaira public/projects/20260813-jododaira/*.mp4`。この glob は生成済みのプロキシ (`*.preview.mp4`) も拾うが、`.preview.mp4` で終わる入力は convert がスキップするため、そのまま再実行して構わない。
+- 既に変換済み素材だけがある project にプロキシを追加するときは、変換済み素材自身を入力にして `npm run convert` を再実行する。例: `npm run convert -- 00000000-sample public/projects/00000000-sample/*.mp4`。この glob は生成済みのプロキシ (`*.preview.mp4`) も拾うが、`.preview.mp4` で終わる入力は convert がスキップするため、そのまま再実行して構わない。
 
 ## コーディング規約
 
