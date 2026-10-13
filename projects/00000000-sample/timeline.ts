@@ -214,9 +214,16 @@ export default timeline([
     // 写真紹介 (1〜2 枚)。at に start(item, offset?) で「clipB の開始の
     // 1 秒後」を渡している。offset は開始からの相対秒 (負も可)。発話の塊
     // (立ち絵を含む、layer 4) より後ろに描かれる (T&M「写真紹介」)。
+    // 2 枚目は caption で写真の隅に文字を添えた例 (位置の既定は左下)。
     cut(
       photoShowcase({
-        photos: [asset("photos/photo-01.jpg"), asset("photos/photo-02.jpg")],
+        photos: [
+          asset("photos/photo-01.jpg"),
+          {
+            image: asset("photos/photo-02.jpg"),
+            caption: { text: "朝の峠道\n標高 800m" },
+          },
+        ],
       }),
       { at: start(clipB, 1), duration: 5 },
     ),

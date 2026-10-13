@@ -87,6 +87,7 @@ export const themeCssVars = (
     "--font": fontFamily,
     "--scrim-height": `${scrim.height}px`,
     "--scrim-bottom": scrim.bottom,
+    "--scrim-top": scrim.top,
     "--subtitle-line-height": `${subtitleLayout.lineHeight}`,
     "--subtitle-bottom-offset": `${subtitleLayout.bottomOffset}px`,
     "--thumb-scrim": thumbScrim(palette),

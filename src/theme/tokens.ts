@@ -96,13 +96,18 @@ export const subtitleLayout = {
   bottomOffset: 86,
 } as const;
 
+/** scrim の 3 段のグラデーション停止点 (bottom・top で共有)。 */
+const scrimStops =
+  "rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0)";
+
 /** T&M「画面配置」「字幕の出し方」節。 */
 export const scrim = {
   /** 暗がりの高さ。px。134 + 44 * 1.45 * 2 + 86 (字幕 2 行分)。 */
   height: 348,
   /** 暗がりの下地。design の --scrim-bottom と同じグラデーション。 */
-  bottom:
-    "linear-gradient(to top, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0.45) 45%, rgba(0, 0, 0, 0))",
+  bottom: `linear-gradient(to top, ${scrimStops})`,
+  /** 写真紹介のキャプションを上置きにするときの下地。bottom の向きを反転したもの。 */
+  top: `linear-gradient(to bottom, ${scrimStops})`,
 } as const;
 
 /** 章タイトル (T&M「章タイトル」節)。暗がりブロック内の padding 134px 115px 126px。 */
@@ -159,6 +164,16 @@ export const photoLayout = {
   cellWidth: 696,
   /** 列の間隔。px。 */
   gap: 19,
+  /** キャプションの文字サイズ。px。 */
+  captionFontSize: 22,
+  /** キャプションの letter-spacing。 */
+  captionLetterSpacing: "0.02em",
+  /** キャプションの左右 padding。px。 */
+  captionPaddingX: 24,
+  /** キャプションの padding のうち、写真の縁に近い側 (下置きなら下、上置きなら上)。px。 */
+  captionPaddingEdge: 18,
+  /** キャプションの padding のうち、写真の中央に近い側 (帯のグラデーションの余白)。px。 */
+  captionPaddingInner: 48,
 } as const;
 
 /** OP / サムネ用フレーム (T&M「サムネ」節 + 画面サンプル C の 1 例目の実寸 px)。 */

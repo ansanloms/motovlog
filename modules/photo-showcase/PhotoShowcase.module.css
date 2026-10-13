@@ -18,17 +18,65 @@
   grid-auto-columns: var(--photo-single-width);
 }
 
+/* 写真・動画 1 個の枠。キャプションはこの枠に対して置く。 */
 .cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  box-shadow: var(--shadow-photo);
+}
+
+.media {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  box-shadow: var(--shadow-photo);
-  display: block;
 }
 
-/* contain は切らずに収める。影は枠でなく媒体の縁に付ける (余白は透明)。 */
+/*
+ * contain は切らずに収める。影は枠でなく媒体の縁に付ける (余白は透明)。
+ * キャプションに影が掛からないよう、filter は媒体だけに掛ける。動画
+ * (Video) は className を受けないため、キャプション以外の子で指す。
+ */
 .frame[data-fit="contain"] .cell {
-  object-fit: contain;
   box-shadow: none;
+}
+
+.frame[data-fit="contain"] .cell > :not(.caption) {
+  object-fit: contain;
   filter: drop-shadow(var(--shadow-photo));
+}
+
+.caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  font-family: var(--font);
+  font-size: var(--photo-caption-font-size);
+  font-weight: var(--w-regular);
+  color: var(--ink-video);
+  letter-spacing: var(--photo-caption-letter-spacing);
+  white-space: pre-line;
+}
+
+.caption[data-position^="bottom"] {
+  bottom: 0;
+  padding: var(--photo-caption-padding-inner) var(--photo-caption-padding-x)
+    var(--photo-caption-padding-edge);
+  background: var(--scrim-bottom);
+}
+
+.caption[data-position^="top"] {
+  top: 0;
+  padding: var(--photo-caption-padding-edge) var(--photo-caption-padding-x)
+    var(--photo-caption-padding-inner);
+  background: var(--scrim-top);
+}
+
+.caption[data-position$="left"] {
+  text-align: left;
+}
+
+.caption[data-position$="right"] {
+  text-align: right;
 }
