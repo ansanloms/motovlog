@@ -1,4 +1,4 @@
-// 発話 1 本分のキャッシュ (public/projects/<slug>/lines/<key>.json) の型と
+// 発話 1 本分のキャッシュ (projects/<slug>/assets/lines/<key>.json) の型と
 // 最小ランタイム検査 (ADR-0010)。key は text と voice の hash
 // (src/voice/key.ts)。zod は使わず project/load.ts の isTimeline と同じ
 // 流儀で検査する。

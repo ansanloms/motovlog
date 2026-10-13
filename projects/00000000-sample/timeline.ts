@@ -6,7 +6,7 @@
 //
 // コピーして直す場所:
 // - slug: 下の asset() の "00000000-sample" と .env の REMOTION_PROJECT
-// - 素材のパス: asset() に渡す各ファイル名 (public/projects/<slug>/ 配下)
+// - 素材のパス: asset() に渡す各ファイル名 (projects/<slug>/assets/ 配下)
 // - サムネ・章タイトル・写真紹介・ED・注釈・発話の中身 (props と text)
 //
 // 動かし方:
@@ -51,7 +51,7 @@ import {
 import { chapterDurationSec, chapterTiming } from "../../src/theme/index.ts";
 import { narrator } from "../../theme/index.ts";
 
-const asset = (path: string) => staticFile(`projects/00000000-sample/${path}`);
+const asset = (path: string) => staticFile(`00000000-sample/assets/${path}`);
 
 const src = asset("VID_20260802_074903_00_287_359_DASHCAM1.mp4");
 
@@ -117,7 +117,7 @@ const calm = { ...narrator, speed: 0.9 };
 // 同じファイルの const・theme からの import に限る。voice の 8 値:
 // speaker (VOICEVOX のスタイル id)、speed・intonation・volume・pause は
 // 倍率で 1 が中立、pitch はオフセットで 0 が中立、silenceBefore・
-// silenceAfter は秒。音声は public/projects/<slug>/lines/<key>.{wav,json}
+// silenceAfter は秒。音声は projects/<slug>/assets/lines/<key>.{wav,json}
 // にキャッシュされ、コミットしない。text か実効の voice (下記) を変えると
 // 別の key になり再生成される。
 //
@@ -261,7 +261,7 @@ export default timeline([
     // 走行映像に合わせている。
     cut(
       audio({
-        src: staticFile("assets/bgm/m1.wav"),
+        src: staticFile("common/bgm/m1.wav"),
         loop: true,
         volume: [
           { at: 0, volume: 0.2 },

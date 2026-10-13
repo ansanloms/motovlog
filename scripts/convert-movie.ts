@@ -1,7 +1,7 @@
 // 使い方: npm run convert -- <slug> <入力ファイル>...
-// 各入力を public/projects/<slug>/<basename>.mp4 へ変換する (ADR-0003)。
+// 各入力を projects/<slug>/assets/<basename>.mp4 へ変換する (ADR-0003)。
 // あわせて、その変換済み素材から Studio 用プロキシ (既定 540p、PREVIEW_HEIGHT
-// で変更可) public/projects/<slug>/<basename>.preview.mp4 を作る (ADR-0013)。
+// で変更可) projects/<slug>/assets/<basename>.preview.mp4 を作る (ADR-0013)。
 // 出力先は cwd (利用側のルート) から引く (ADR-0012)。
 // fps は theme の定数 1 つで、composition と一致させる (ADR-0003)。
 // 起動時に nvenc が使えるかを確認し、使えなければ libx264 を使う。nvenc が使える場合でも、
@@ -54,7 +54,7 @@ const main = async (): Promise<void> => {
     return;
   }
 
-  const outDir = path.join(process.cwd(), "public", "projects", slug);
+  const outDir = path.join(process.cwd(), "projects", slug, "assets");
 
   // 変換に入る前に、出力先が未生成の入力ファイルが読めることを確認する。
   // 出力が既に存在する入力は変換済みで原本が未マウントの場合があるため確認をスキップする。

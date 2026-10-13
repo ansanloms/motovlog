@@ -5,10 +5,10 @@ import { narrator } from "../../theme/index.ts";
 import { generateMissing } from "./generate.ts";
 import type { GenerateDeps } from "./generate.ts";
 
-const PUBLIC_DIR = "/tmp/public";
+const PUBLIC_DIR = "/tmp/projects";
 const SLUG = "00000000-sample";
 
-/** テストで使う wav・json の絶対パス (public/ + linePath()) を組む。 */
+/** テストで使う wav・json の絶対パス (projects/ + linePath()) を組む。 */
 const cachePaths = (key: string): { wav: string; json: string } => {
   const rel = linePath(SLUG, key);
 
@@ -84,9 +84,11 @@ const makeDeps = (
 ): GenerateDeps & {
   writes: Map<string, Buffer | string>;
   renames: [string, string][];
+  mkdirs: string[];
 } => {
   const writes = new Map<string, Buffer | string>();
   const renames: [string, string][] = [];
+  const mkdirs: string[] = [];
   const existingKeys = overrides.existingKeys ?? new Set<string>();
 
   const fetchImpl: typeof fetch = async (input) => {
@@ -113,7 +115,6 @@ const makeDeps = (
   };
 
   return {
-    linesDir: path.join(PUBLIC_DIR, "projects", SLUG, "lines"),
     publicDir: PUBLIC_DIR,
     voicevoxUrl: "http://voicevox.example",
     fetchImpl,
@@ -124,7 +125,9 @@ const makeDeps = (
           .pop()!
           .replace(/\.(wav|json)$/, ""),
       ),
-    mkdir: () => {},
+    mkdir: (dir) => {
+      mkdirs.push(dir);
+    },
     writeFile: (p, data) => {
       writes.set(p, data);
     },
@@ -142,9 +145,11 @@ const makeDeps = (
     ...overrides,
     writes,
     renames,
+    mkdirs,
   } as GenerateDeps & {
     writes: Map<string, Buffer | string>;
     renames: [string, string][];
+    mkdirs: string[];
   };
 };
 
@@ -166,6 +171,10 @@ describe("generateMissing", () => {
     expect(deps.writes.has(jsonPath)).toBe(true);
     // json は tmp に書いてから rename している。
     expect(deps.renames).toEqual([[`${jsonPath}.tmp`, jsonPath]]);
+    // 保存先 dir (wav・json 共通) を書き込み前に作る。
+    expect(deps.mkdirs).toEqual([
+      path.join(PUBLIC_DIR, "00000000-sample", "assets", "lines"),
+    ]);
 
     const written = JSON.parse(deps.writes.get(jsonPath) as string);
     expect(written.duration).toBeCloseTo(0.1, 6);

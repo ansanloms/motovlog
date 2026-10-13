@@ -11,8 +11,8 @@ describe("previewSrc", () => {
   });
 
   it("staticFile() のようなディレクトリ付きパスでも末尾だけ変える", () => {
-    expect(previewSrc("projects/20260817-jododaira/clip1.mp4")).toBe(
-      "projects/20260817-jododaira/clip1.preview.mp4",
+    expect(previewSrc("20260817-jododaira/assets/clip1.mp4")).toBe(
+      "20260817-jododaira/assets/clip1.preview.mp4",
     );
   });
 });

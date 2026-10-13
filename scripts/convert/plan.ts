@@ -204,7 +204,7 @@ export const previewName = (name: string): string => `${name}.preview`;
 /**
  * 入力ファイルが Studio 用プロキシ (`<basename>.preview.mp4`) かどうかを、
  * basename が `.preview.mp4` で終わるかで判定する。README の後付け手順
- * (`npm run convert -- <slug> public/projects/<slug>/*.mp4`) の glob は
+ * (`npm run convert -- <slug> projects/<slug>/assets/*.mp4`) の glob は
  * 生成済みのプロキシも拾ってしまうため、runConvert 側でこれを使って
  * スキップする (`<name>.preview.preview.mp4` の生成を防ぐ)。
  */

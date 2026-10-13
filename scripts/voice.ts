@@ -1,12 +1,12 @@
 // 使い方: tsx scripts/voice.ts [slug] [--watch]
 //
 // projects/<slug>/timeline.ts を静的解析し (scripts/voice/extract.ts)、
-// line() ごとの音声キャッシュ (public/projects/<slug>/lines/<key>.{wav,json}、
+// line() ごとの音声キャッシュ (projects/<slug>/assets/lines/<key>.{wav,json}、
 // ADR-0010) を VOICEVOX ENGINE で生成する (scripts/voice/generate.ts)。
 // slug は引数 → REMOTION_PROJECT → app/config.ts の defaultProject の順で
 // 決める。
 //
-// 利用側のルートは cwd (ADR-0012)。projects/・characters/・public/・.env・
+// 利用側のルートは cwd (ADR-0012)。projects/・characters/・.env・
 // app/config.ts はすべて cwd から引く。
 //
 // 既定 (--watch 無し) は 1 回生成して終了する (npm run render の前段)。
@@ -177,11 +177,10 @@ const runOnce = async (slug: string, voicevoxUrl: string): Promise<void> => {
     process.stderr.write(`${warning}\n`);
   }
 
-  const publicDir = path.join(consumerRoot, "public");
-  const linesDir = path.join(publicDir, "projects", slug, "lines");
+  // Remotion の public dir は projects/ (ADR-0020)。
+  const publicDir = path.join(consumerRoot, "projects");
 
   const deps: GenerateDeps = {
-    linesDir,
     publicDir,
     voicevoxUrl,
     fetchImpl: fetch,
