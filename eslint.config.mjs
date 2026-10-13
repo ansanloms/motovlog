@@ -217,6 +217,23 @@ export default [
     },
   },
   {
+    // lib の remotion 設定 (config/*.cjs、ADR-0021) は CommonJS。Remotion が
+    // remotion.config.ts の bundle 越しに require() するため CJS で書く。
+    files: ["config/**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: {
+        require: "readonly",
+        module: "writable",
+        process: "readonly",
+        console: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     rules: {
       "no-restricted-globals": [
         "error",
