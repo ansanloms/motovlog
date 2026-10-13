@@ -17,6 +17,35 @@ const asElement = (node: unknown): ReactElement => {
 /** ReactElement の props を任意の形にキャストする (テストの検証用)。 */
 const propsOf = <T,>(element: ReactElement): T => element.props as T;
 
+/** 要素の children を配列で返す (null・false は除く)。 */
+const childrenOf = (element: ReactElement): ReactNode[] => {
+  const { children } = propsOf<{ children?: ReactNode }>(element);
+  return (Array.isArray(children) ? children : [children]).filter((child) =>
+    isValidElement(child),
+  );
+};
+
+/** PhotoShowcase を 1 段レンダーし、.frame 直下のセル要素を返す。 */
+const cellsOf = (photos: Parameters<typeof PhotoShowcase>[0]["photos"]) => {
+  const tree = asElement(PhotoShowcase({ photos }));
+  const frame = asElement(propsOf<{ children: ReactNode }>(tree).children);
+  return childrenOf(frame).map((cell) => {
+    const element = asElement(cell);
+    // 非公開のセルコンポーネントは関数として直接呼んで 1 段レンダーする。
+    const render = element.type as (props: unknown) => ReactNode;
+    return asElement(render(element.props));
+  });
+};
+
+/** セルの 2 番目の子 (CaptionBand) を 1 段レンダーした結果を返す (描かなければ null)。 */
+const renderedCaptionOf = (cell: ReactElement): ReactNode => {
+  const caption = asElement(childrenOf(cell)[1]);
+  return (caption.type as (props: unknown) => ReactNode)(caption.props);
+};
+
+/** セルの caption 要素を 1 段レンダーして返す (要素で無ければ throw)。 */
+const captionOf = (cell: ReactElement) => asElement(renderedCaptionOf(cell));
+
 describe("photoShowcase (要素ファクトリ)", () => {
   it("fit を省略すると props に fit を含まない (既定は PhotoShowcase 側で cover)", () => {
     const element = photoShowcase({ photos: ["photo.jpg"] });
@@ -70,7 +99,7 @@ describe("PhotoShowcase", () => {
     const cellRender = cell.type as (props: unknown) => ReactNode;
     const rendered = asElement(cellRender(cell.props));
     const video = asElement(
-      propsOf<{ children: ReactNode }>(rendered).children,
+      childrenOf(rendered).find((child) => asElement(child).type === Video),
     );
 
     expect(video.type).toBe(Video);
@@ -80,5 +109,83 @@ describe("PhotoShowcase", () => {
       volume: 0,
       objectFit: "contain",
     });
+  });
+
+  it("文字列の要素は wrapper + media を描き、caption を持たない", () => {
+    const [cell] = cellsOf(["photo.jpg"]);
+    const [media] = childrenOf(cell);
+
+    expect(propsOf<{ className?: string }>(cell).className).toContain("cell");
+    expect(propsOf<{ src: string }>(asElement(media)).src).toBe("photo.jpg");
+    expect(renderedCaptionOf(cell)).toBeNull();
+  });
+
+  it("{ image } の要素は wrapper + media に src を渡す", () => {
+    const [cell] = cellsOf([{ image: "photo.jpg" }]);
+    const children = childrenOf(cell);
+
+    expect(propsOf<{ src: string }>(asElement(children[0])).src).toBe(
+      "photo.jpg",
+    );
+    expect(renderedCaptionOf(cell)).toBeNull();
+  });
+
+  it("caption は既定で bottom-left の要素として描かれ、文字を含む", () => {
+    const [cell] = cellsOf([
+      { image: "photo.jpg", caption: { text: "朝の峠道" } },
+    ]);
+    const rendered = captionOf(cell);
+    const props = propsOf<{
+      "data-position": string;
+      className: string;
+      children: ReactNode;
+    }>(rendered);
+
+    expect(props.className).toContain("caption");
+    expect(props["data-position"]).toBe("bottom-left");
+    expect(props.children).toBe("朝の峠道");
+  });
+
+  it("caption の position を指定すると data-position に渡る", () => {
+    const [cell] = cellsOf([
+      {
+        image: "photo.jpg",
+        caption: { text: "a\nb", position: "top-right" },
+      },
+    ]);
+    const rendered = captionOf(cell);
+
+    expect(
+      propsOf<{ "data-position": string }>(rendered)["data-position"],
+    ).toBe("top-right");
+  });
+
+  it("動画にも caption を付けられる", () => {
+    const [cell] = cellsOf([{ video: "video.mp4", caption: { text: "動画" } }]);
+
+    expect(childrenOf(cell)).toHaveLength(2);
+  });
+
+  it.each(["", " ", "\n"])(
+    "写真の caption の text が %j なら caption を描かない",
+    (text) => {
+      const [cell] = cellsOf([{ image: "photo.jpg", caption: { text } }]);
+
+      expect(renderedCaptionOf(cell)).toBeNull();
+    },
+  );
+
+  it("動画の caption の text が空なら caption を描かない", () => {
+    const [cell] = cellsOf([{ video: "video.mp4", caption: { text: "" } }]);
+
+    expect(renderedCaptionOf(cell)).toBeNull();
+  });
+
+  it("動画の caption の text が非空なら caption を描く", () => {
+    const [cell] = cellsOf([{ video: "video.mp4", caption: { text: "動画" } }]);
+
+    expect(propsOf<{ children: ReactNode }>(captionOf(cell)).children).toBe(
+      "動画",
+    );
   });
 });
