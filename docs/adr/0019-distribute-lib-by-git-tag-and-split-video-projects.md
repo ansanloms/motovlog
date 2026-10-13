@@ -43,7 +43,7 @@ lib の TypeScript ソースは、`node_modules` の下では Node に型を除�
 - リポジトリ直下の `.npmrc` に `tag-version-prefix=""` と `message="%s"` を置く。`npm version` が作るコミットメッセージと tag は、どちらも `X.Y.Z` になる。
 - リリースは main の上で `npm version <patch|minor|X.Y.Z>` を実行し、`git push --follow-tags` で push する。
 - 利用側は `github:ansanloms/motovlog#semver:^0.1.0` の形で取り込む。
-- 動画の project は別のリポジトリ (`ansanloms/motovlog-project`。所有者が作成する) に分ける。`projects/` にあるサンプル project はこのリポジトリに残し、fixture として使う。サンプルの移動は別の作業とする。
+- 動画の project は別のリポジトリ (`ansanloms/motovlog-project`。所有者が作成する) に分ける。`projects/` にあるサンプル project はこのリポジトリに残し、fixture として使う。実際の動画 (`20260813-jododaira`) の project は `ansanloms/motovlog-project` へ移し終えており、このリポジトリには無い。
 
 ## Consequences
 
@@ -60,6 +60,7 @@ lib の TypeScript ソースは、`node_modules` の下では Node に型を除�
 - 0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる。minor を上げた版へ移るときは、利用側が範囲を書き換える。
 - lib のソースは TypeScript のまま配られるため、利用側は Remotion の bundler で取り込む必要がある。Node で直接実行する経路は、lib の TypeScript を読めない。
 - module 単位で版を分けられない。
+- 利用側の `package-lock.json` は解決先を `git+ssh://git@github.com/ansanloms/motovlog.git#<sha>` で固定する。利用側は `npm ci` のために GitHub の SSH 鍵が要る。
 
 ### 禁止事項
 
@@ -69,12 +70,12 @@ lib の TypeScript ソースは、`node_modules` の下では Node に型を除�
 
 ## Assumptions
 
-| 前提                                                                          | 状態   | 確認方法 / 結果                                                                                                                                                                                                                                                                                                                                                                   |
-| ----------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| プロジェクトの `.npmrc` の `tag-version-prefix` と `message` が効く           | 検証済 | 2026-10-13: 作業コピーのクローンで `npm version patch` を実行し、tag `0.1.1` とコミット件名 `0.1.1` が作られた                                                                                                                                                                                                                                                                    |
-| `#semver:^0.1.0` が `X.Y.Z` 形式の tag を解決する                             | 未検証 | 最初の tag `0.1.0` を push した後、利用側のリポジトリで `npm install` して確認する                                                                                                                                                                                                                                                                                                |
-| `npm update` が、範囲に合う新しい tag へ解決先を動かす                        | 未検証 | 新しい tag を push した後、利用側で `npm update` を実行して `package-lock.json` の解決先を確認する                                                                                                                                                                                                                                                                                |
-| 利用側の Remotion の bundler が、`node_modules` 配下の lib のソースを処理する | 未検証 | [ADR-0012](./0012-split-template-library-from-consumer.md) は `npm pack` の tarball を外部ディレクトリへ install して検証済 (2026-09-12)。git 依存 (`github:` 参照) の経路では、2026-10-13 の実測で install と配置されたファイル (`src/`・`modules/`・`scripts/`) までを確認した。git install からの bundle は未検証で、利用側のリポジトリで `remotion bundle` を実行して確認する |
+| 前提                                                                          | 状態   | 確認方法 / 結果                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| プロジェクトの `.npmrc` の `tag-version-prefix` と `message` が効く           | 検証済 | 2026-10-13: 作業コピーのクローンで `npm version patch` を実行し、tag `0.1.1` とコミット件名 `0.1.1` が作られた                                                                                                                                                                              |
+| `#semver:^0.1.0` が `X.Y.Z` 形式の tag を解決する                             | 検証済 | 2026-10-13: 利用側で実測した。lockfile の `resolved` が `git+ssh://git@github.com/ansanloms/motovlog.git#28c4bfc90b4d3846347dd9991eefab17a6f4a81e` で、`refs/tags/0.1.0^{}` と一致した                                                                                                      |
+| `npm update` が、範囲に合う新しい tag へ解決先を動かす                        | 未検証 | 新しい tag を push した後、利用側で `npm update` を実行して `package-lock.json` の解決先を確認する                                                                                                                                                                                          |
+| 利用側の Remotion の bundler が、`node_modules` 配下の lib のソースを処理する | 検証済 | [ADR-0012](./0012-split-template-library-from-consumer.md) は `npm pack` の tarball を外部ディレクトリへ install して検証済 (2026-09-12)。git 依存の経路は 2026-10-13 に利用側で実測した。`npm run build` が成功し、フレーム 10800-10810 の render (写真・立ち絵・BGM・フォント) が成功した |
 
 ## References
 
