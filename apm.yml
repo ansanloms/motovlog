@@ -1,6 +1,6 @@
-name: motovlog-template
+name: motovlog
 version: 1.0.0
-description: APM project for motovlog-template
+description: APM project for motovlog
 author: ansanloms
 dependencies:
   apm:
