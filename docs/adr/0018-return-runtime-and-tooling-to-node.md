@@ -33,7 +33,7 @@ Remotion の CLI のドキュメントには「Deno is not supported by Remotion
 - Remotion CLI (`compositions`・`bundle`・`render`・`studio`) と `scripts/` を Node で実行する。`scripts/` の TypeScript は `tsx` で実行する。
 - 依存は `package.json` に書き、`package-lock.json` をコミットする。CI は `npm ci` で依存を入れる。
 - 型検査は `tsc`、lint は ESLint、整形は prettier、テストは vitest で行う。
-- 利用側は [ADR-0012](./0012-split-template-library-from-consumer.md) のとおり `npm install github:ansanloms/motovlog-template` で取り込む。
+- 利用側は [ADR-0012](./0012-split-template-library-from-consumer.md) のとおり `npm install github:ansanloms/motovlog#semver:^1.0.0` で取り込む。
 - `modules/<name>/` の構成は [ADR-0015](./0015-split-components-into-modules.md) のとおり保つ。module 間と `src/` からの import は、拡張子付きの相対パスで書く。
 - module の境界は、ESLint の相対パスに基づく規則で検査する。
 - CI は lint・test・build の job に加え、`modules/` 直下のディレクトリを列挙した matrix の job で、module ごとに ESLint と vitest を実行する。
