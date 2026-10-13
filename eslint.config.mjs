@@ -374,7 +374,7 @@ export default [
               // characters/<name>.ts が lib から import してよいのは
               // src/compositions/character.ts だけ (ADR-0011・ADR-0012)。
               // 5 入口 (src/index.ts・src/compositions/index.ts 等) と bare
-              // specifier (motovlog-template) は、figure()・line() 経由で
+              // specifier (@ansanloms/motovlog) は、figure()・line() 経由で
               // src/components と CSS Modules を辿るため素の Node から
               // import できなくなり、watcher (scripts/voice/extract.ts) が
               // line().by の voice を読めなくなる。
