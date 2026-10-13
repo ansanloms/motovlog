@@ -214,6 +214,7 @@
           <img src="uploads/VID_20260802_074903_00_287_359_DASHCAM1.mp4_snapshot_00.00.00_[2026-09-07_18.56.05].jpg" alt="背景で流れている走行映像" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; left: 480px; right: 480px; top: 96px; bottom: 288px; overflow: hidden; box-shadow: var(--shadow-photo);">
             <img src="uploads/PXL_20260815_045406555.RAW-01.jpg" alt="待避所に停めたバイクの写真" style="width: 100%; height: 100%; object-fit: cover;">
+            <div style="position: absolute; left: 0; right: 0; top: {{ capTop }}; bottom: {{ capBottom }}; padding: {{ capPad }}; text-align: {{ capAlign }}; font-size: 22px; font-weight: var(--w-regular); color: var(--ink-video); letter-spacing: 0.02em; background: {{ capBg }};">峠の待避所で休憩</div>
           </div>
           <div style="position: absolute; left: 10px; bottom: 0; width: 513px; height: 720px; overflow: hidden;">
             <img src="uploads/2-a937a53b.png" alt="指差しポーズの立ち絵（上半身のみ表示）" style="position: absolute; left: 48px; top: 0; width: 417px; height: 1379px; filter: drop-shadow(var(--shadow-figure-edge)) drop-shadow(var(--shadow-figure));">
@@ -222,7 +223,7 @@
             <div style="font-size: var(--subtitle); font-weight: var(--w-bold); line-height: 1.45; color: var(--ink-video);">この一枚を撮るために30分早く出た</div>
           </div>
         </div></div>
-        <p style="margin: 0; font-size: 1.4rem; line-height: 1.8; color: var(--ink-dim);">走行映像は止めずに背後で流したまま、写真を中央に重ねる（1枚のときは左右25%を空けた幅）。全画面にはせず、背景の映像もそのまま流す。写真は中央基準のトリミング（縦写真は正方形に切る）。立ち絵は左のまま、字幕も同じ位置。撮影日や場所は写真に添えず、必要なときだけ右上の注釈で出す。写真にも同じ影（黒55%・ぼかし21px相当、下方向に8px）を付けて映像から浮かせる。写真はフェードなしで出し、表示時間は語りに合わせて任意。ズームもパンもしない。写真は例外として上部1/3にかかる。弾幕と重なるが、数秒で消えるので許容する。</p>
+        <p style="margin: 0; font-size: 1.4rem; line-height: 1.8; color: var(--ink-dim);">走行映像は止めずに背後で流したまま、写真を中央に重ねる（1枚のときは左右25%を空けた幅）。全画面にはせず、背景の映像もそのまま流す。写真は中央基準のトリミング（縦写真は正方形に切る）。立ち絵は左のまま、字幕も同じ位置。キャプションは写真内の四隅のいずれか（標準は左下）に置く（22px・Regular・白文字。字幕と同じ黒のフェードを写真の下部全幅に敷いて読ませる）。写真にも同じ影（黒55%・ぼかし21px相当、下方向に8px）を付けて映像から浮かせる。写真はフェードなしで出し、表示時間は語りに合わせて任意。ズームもパンもしない。写真は例外として上部1/3にかかる。弾幕と重なるが、数秒で消えるので許容する。</p>
       </div>
       <div style="display: flex; flex-direction: column; gap: 1rem;">
         <div style="font-size: 1.3rem; color: var(--ink-faint); letter-spacing: 0.08em;">2枚のとき</div>
@@ -230,8 +231,8 @@
       <div data-stage style="position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; transform: scale(var(--s, 0.5)); background: var(--bg);">
           <img src="uploads/DASHCAM_20260905_175905_272_302.mp4_snapshot_09.17_[2026-09-07_18.56.40].jpg" alt="背景で流れている走行映像" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;">
           <div style="position: absolute; left: 254px; right: 254px; top: 96px; bottom: 288px; display: grid; grid-template-columns: 1fr 1fr; gap: 19px; filter: drop-shadow(var(--shadow-photo));">
-            <div style="overflow: hidden;"><img src="uploads/PXL_20260816_092038409.RAW-01.MP.jpg" alt="キャンプ場に張ったテントの写真" style="width: 100%; height: 100%; object-fit: cover;"></div>
-            <div style="overflow: hidden;"><img src="uploads/PXL_20260815_045406555.RAW-01.jpg" alt="待避所に停めたバイクの写真" style="width: 100%; height: 100%; object-fit: cover;"></div>
+            <div style="position: relative; overflow: hidden;"><img src="uploads/PXL_20260816_092038409.RAW-01.MP.jpg" alt="キャンプ場に張ったテントの写真" style="width: 100%; height: 100%; object-fit: cover;"><div style="position: absolute; left: 0; right: 0; top: {{ capTop }}; bottom: {{ capBottom }}; padding: {{ capPad }}; text-align: {{ capAlign }}; font-size: 22px; font-weight: var(--w-regular); color: var(--ink-video); letter-spacing: 0.02em; background: {{ capBg }};">高原のキャンプ場</div></div>
+            <div style="position: relative; overflow: hidden;"><img src="uploads/PXL_20260815_045406555.RAW-01.jpg" alt="待避所に停めたバイクの写真" style="width: 100%; height: 100%; object-fit: cover;"><div style="position: absolute; left: 0; right: 0; top: {{ capTop }}; bottom: {{ capBottom }}; padding: {{ capPad }}; text-align: {{ capAlign }}; font-size: 22px; font-weight: var(--w-regular); color: var(--ink-video); letter-spacing: 0.02em; background: {{ capBg }};">峠の待避所で休憩</div></div>
           </div>
           <div style="position: absolute; left: 10px; bottom: 0; width: 513px; height: 720px; overflow: hidden;">
             <img src="uploads/4-891203c5.png" alt="腕組みポーズの立ち絵（上半身のみ表示）" style="position: absolute; left: 48px; top: 0; width: 417px; height: 1526px; filter: drop-shadow(var(--shadow-figure-edge)) drop-shadow(var(--shadow-figure));">
@@ -293,11 +294,21 @@
 
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;A 墨とオフホワイト&quot;, &quot;B 夜明けの空&quot;, &quot;C 標識と森&quot;, &quot;D 晴天の青&quot;, &quot;E 若葉の緑&quot;], &quot;default&quot;: &quot;E 若葉の緑&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;配色&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;A 墨とオフホワイト&quot;, &quot;B 夜明けの空&quot;, &quot;C 標識と森&quot;, &quot;D 晴天の青&quot;, &quot;E 若葉の緑&quot;], &quot;default&quot;: &quot;E 若葉の緑&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;配色&quot;}, &quot;captionPos&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;左下&quot;, &quot;右下&quot;, &quot;左上&quot;, &quot;右上&quot;], &quot;default&quot;: &quot;左下&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;写真キャプション&quot;}}">
 class Component extends DCLogic {
   renderVals() {
     const map = { "A 墨とオフホワイト": "a", "B 夜明けの空": "b", "C 標識と森": "c", "D 晴天の青": "d", "E 若葉の緑": "e" };
-    return { palette: map[this.props.palette] ?? "e" };
+    const pos = this.props.captionPos ?? "左下";
+    const isTop = pos.startsWith("左上") || pos.startsWith("右上");
+    const isRight = pos.startsWith("右");
+    return {
+      palette: map[this.props.palette] ?? "e",
+      capTop: isTop ? "0" : "auto",
+      capBottom: isTop ? "auto" : "0",
+      capPad: isTop ? "18px 24px 48px" : "48px 24px 18px",
+      capAlign: isRight ? "right" : "left",
+      capBg: isTop ? "linear-gradient(to bottom, rgba(0,0,0,0.82), rgba(0,0,0,0.45) 45%, rgba(0,0,0,0))" : "var(--scrim-bottom)"
+    };
   }
 
   componentDidMount() {
