@@ -31,13 +31,13 @@ lib (動画を作る機能) は次の 3 つ。
 
 利用側から lib を import してよいのは次の 5 つの入口と、各 module の入口 (`modules/<name>/index.ts`) だけで、それ以外の `src/`・`modules/` 配下を import すると ESLint が落とす。
 
-| 入口                               | 実体                        | 主な中身                                                                                                                                                                                                   |
-| ---------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@ansanloms/motovlog`                | `src/index.ts`              | `configure`・`RemotionRoot`・`Motovlog` と、下の 4 つの再 export                                                                                                                                           |
-| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`                                                                                                                                   |
-| `@ansanloms/motovlog/components`     | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending` 等)                                                                                                                                                  |
-| `@ansanloms/motovlog/compositions`   | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                                                                                                                                                    |
-| `@ansanloms/motovlog/theme`          | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)                                                                                                                                        |
+| 入口                                 | 実体                        | 主な中身                                                                                                                                                                                                     |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@ansanloms/motovlog`                | `src/index.ts`              | `configure`・`RemotionRoot`・`Motovlog` と、下の 4 つの再 export                                                                                                                                             |
+| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`                                                                                                                                     |
+| `@ansanloms/motovlog/components`     | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending` 等)                                                                                                                                                    |
+| `@ansanloms/motovlog/compositions`   | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                                                                                                                                                      |
+| `@ansanloms/motovlog/theme`          | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)                                                                                                                                          |
 | `@ansanloms/motovlog/modules/<name>` | `modules/<name>/index.ts`   | npm package 相当の独立した単位 (今はコンポーネント 9 個と `core`)。コンポーネントの module は要素ファクトリとコンポーネントを出し、`@ansanloms/motovlog/components` はこれらの要素ファクトリを再 export する |
 
 このリポジトリの中の利用側ファイルは、同じ 5 つの入口を相対パス (`../../src/effects/index.ts` 等) で import する。外部のリポジトリから依存として使う手順は「外部のリポジトリから使う」にある。
@@ -47,14 +47,16 @@ lib (動画を作る機能) は次の 3 つ。
 `@ansanloms/motovlog` は npm レジストリには publish しない (`private: true`)。外部のリポジトリからは GitHub 参照で依存に入れる ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。
 
 ```sh
-npm install github:ansanloms/motovlog#semver:^1.0.0
+npm install github:ansanloms/motovlog#semver:^0.1.0
 ```
 
 取り込みはリリースタグ (`X.Y.Z` 形式。`v` は付けない) の semver 範囲で指定する。`package.json` には次のように書く。module は `@ansanloms/motovlog/modules/<name>` で import する。
 
 ```json
-"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^1.0.0"
+"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^0.1.0"
 ```
+
+0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.1.0` = `>=0.1.0 <0.2.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
 
 `peerDependencies` (`remotion`・`@remotion/cli`・`@remotion/google-fonts`・`@remotion/media`・`react`・`react-dom`) は利用側の `dependencies` に同じバージョンで入れる。加えて `tsx`・`typescript`・`@types/react`・`@types/node`・`@types/web` を `devDependencies` に入れる (`tsx` は lib の実行時 `dependencies` にも入っているが、利用側の TypeScript の解決には別途要る)。
 
@@ -76,8 +78,8 @@ TypeScript 5.9 には Temporal の型が無いため、`temporal-polyfill/global
 
 import は、このリポジトリ内の相対パスの代わりに bare specifier (5 入口 + `characters/<name>.ts` 用の 1 つ + module ごとの入口) を使う。
 
-| このリポジトリ内の相対パス                                          | 外部からの import                          |
-| ------------------------------------------------------------------- | ------------------------------------------ |
+| このリポジトリ内の相対パス                                          | 外部からの import                            |
+| ------------------------------------------------------------------- | -------------------------------------------- |
 | `../../src/index.ts`                                                | `@ansanloms/motovlog`                        |
 | `../../src/effects/index.ts`                                        | `@ansanloms/motovlog/effects`                |
 | `../../src/components/index.tsx`                                    | `@ansanloms/motovlog/components`             |
@@ -98,6 +100,10 @@ import は、このリポジトリ内の相対パスの代わりに bare specifi
 | `npx remotion render Motovlog`                  | `npm run render` の後半 (先に `npx motovlog-voice` で音声キャッシュを生成する) |
 
 `REMOTION_PROJECT` の優先順位 (Remotion CLI は `.env` の値をシェルの環境変数より優先する) は「新しい動画を作る」の注記のとおり、外部のリポジトリでも変わらない。
+
+## リリース
+
+main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` の設定で、コミット `X.Y.Z` とタグ `X.Y.Z` (`v` なし) が作られる。続けて `git push --follow-tags` で push する。`npm publish` はしない。利用側が `#semver:` で解決するのはこのタグである ([ADR-0019](docs/adr/0019-distribute-lib-by-git-tag-and-split-video-projects.md))。
 
 ## 新しい動画を作る
 

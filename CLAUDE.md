@@ -47,6 +47,10 @@ Claude Code の `/design-sync` skill は、ローカルの React コンポーネ
 
 実行環境と開発ツールは Node と npm に揃える ([ADR-0018](docs/adr/0018-return-runtime-and-tooling-to-node.md))。Remotion CLI と `scripts/` は Node で実行し、`scripts/` の TypeScript は `tsx` で動かす。依存は `package.json` と `package-lock.json` で管理する。型検査は `tsc`、lint は ESLint、整形は prettier、テストは vitest で行い、`npm run lint` が ESLint・`tsc`・prettier をまとめて実行する。`modules/<name>/` はディレクトリ単位の module で、module 間と `src/` からは拡張子付きの相対パスで import し、境界は ESLint の規則で検査する ([ADR-0015](docs/adr/0015-split-components-into-modules.md))。CI は `modules/` 直下のディレクトリごとに matrix の job (`modules`) を立て、`npx eslint modules/<name>` と `npx vitest run modules/<name>/ --passWithNoTests` で module 単位に検証する。Deno は使わず、`deno.json`・`deno.lock` は置かない。
 
+## リリース
+
+版は main の上で `npm version <patch|minor|X.Y.Z>` で上げる。`.npmrc` の `tag-version-prefix=""` と `message="%s"` により、コミットメッセージとタグはどちらも `X.Y.Z` (`v` なし) になる。続けて `git push --follow-tags` で push する。`npm publish` はしない。利用側が `github:ansanloms/motovlog#semver:^0.1.0` の形で解決するのはこのタグである ([ADR-0019](docs/adr/0019-distribute-lib-by-git-tag-and-split-video-projects.md))。
+
 ## シェルスクリプト
 
 `scripts/` 配下のシェルスクリプトは `shellcheck` を通し、指摘 0 件にしてからコミットする。
