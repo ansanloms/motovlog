@@ -25,7 +25,17 @@ const childrenOf = (element: ReactElement): ReactNode[] => {
   );
 };
 
-/** PhotoShowcase を 1 段レンダーし、.frame 直下のセル要素を返す。 */
+/** セル (.cell) の唯一の子の .box 要素を返す。 */
+const boxOf = (cell: ReactElement): ReactElement => {
+  const children = childrenOf(cell);
+  expect(propsOf<{ className?: string }>(cell).className).toContain("cell");
+  expect(children).toHaveLength(1);
+  const box = asElement(children[0]);
+  expect(propsOf<{ className?: string }>(box).className).toContain("box");
+  return box;
+};
+
+/** PhotoShowcase を 1 段レンダーし、.frame 直下の各セルの .box 要素を返す。 */
 const cellsOf = (photos: Parameters<typeof PhotoShowcase>[0]["photos"]) => {
   const tree = asElement(PhotoShowcase({ photos }));
   const frame = asElement(propsOf<{ children: ReactNode }>(tree).children);
@@ -33,11 +43,11 @@ const cellsOf = (photos: Parameters<typeof PhotoShowcase>[0]["photos"]) => {
     const element = asElement(cell);
     // 非公開のセルコンポーネントは関数として直接呼んで 1 段レンダーする。
     const render = element.type as (props: unknown) => ReactNode;
-    return asElement(render(element.props));
+    return boxOf(asElement(render(element.props)));
   });
 };
 
-/** セルの 2 番目の子 (CaptionBand) を 1 段レンダーした結果を返す (描かなければ null)。 */
+/** .box の 2 番目の子 (CaptionBand) を 1 段レンダーした結果を返す (描かなければ null)。 */
 const renderedCaptionOf = (cell: ReactElement): ReactNode => {
   const caption = asElement(childrenOf(cell)[1]);
   return (caption.type as (props: unknown) => ReactNode)(caption.props);
@@ -97,7 +107,7 @@ describe("PhotoShowcase", () => {
     // PhotoVideoCell は PhotoShowcase.tsx 内のみの非公開コンポーネントなので、
     // 関数として直接呼んで 1 段レンダーし、内部の Video 要素の props を見る。
     const cellRender = cell.type as (props: unknown) => ReactNode;
-    const rendered = asElement(cellRender(cell.props));
+    const rendered = boxOf(asElement(cellRender(cell.props)));
     const video = asElement(
       childrenOf(rendered).find((child) => asElement(child).type === Video),
     );
@@ -111,11 +121,10 @@ describe("PhotoShowcase", () => {
     });
   });
 
-  it("文字列の要素は wrapper + media を描き、caption を持たない", () => {
+  it("文字列の要素は .cell > .box に media を描き、caption を持たない", () => {
     const [cell] = cellsOf(["photo.jpg"]);
     const [media] = childrenOf(cell);
 
-    expect(propsOf<{ className?: string }>(cell).className).toContain("cell");
     expect(propsOf<{ src: string }>(asElement(media)).src).toBe("photo.jpg");
     expect(renderedCaptionOf(cell)).toBeNull();
   });
