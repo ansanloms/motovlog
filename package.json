@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "temporal-polyfill": "1.0.5",
-    "tsx": "4.23.15"
+    "tsx": "4.23.15",
+    "typescript": "5.9.3"
   },
   "peerDependencies": {
     "@remotion/cli": "4.0.529",
@@ -55,7 +56,6 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "remotion": "4.0.529",
-    "typescript": "5.9.3",
     "vitest": "5.0.3"
   },
   "scripts": {

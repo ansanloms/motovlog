@@ -59,7 +59,7 @@ npm install github:ansanloms/motovlog#semver:^0.2.0
 
 0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.2.0` = `>=0.2.0 <0.3.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
 
-`peerDependencies` (`remotion`・`@remotion/cli`・`@remotion/google-fonts`・`@remotion/media`・`react`・`react-dom`) は利用側の `dependencies` に同じバージョンで入れる。加えて `tsx`・`typescript`・`@types/react`・`@types/node`・`@types/web` を `devDependencies` に入れる (`tsx` は lib の実行時 `dependencies` にも入っているが、利用側の TypeScript の解決には別途要る)。
+`peerDependencies` (`remotion`・`@remotion/cli`・`@remotion/google-fonts`・`@remotion/media`・`react`・`react-dom`) は利用側の `dependencies` に同じバージョンで入れる。加えて `tsx`・`typescript`・`@types/react`・`@types/node`・`@types/web` を `devDependencies` に入れる。`tsx` と `typescript` は lib の実行時 `dependencies` にも入っている。`motovlog-voice` は timeline を TypeScript の compiler API で解析し、利用側の `typescript` の版に関わらず、lib の `package.json` で固定した版を使う (npm が lib の配下に入れ子で入れる)。利用側の `devDependencies` の `typescript` は、利用側自身の型検査のために要る。
 
 利用側に次のファイルを作る (実物は同梱のサンプル project、`app/`・`theme/index.ts` を参照)。
 
