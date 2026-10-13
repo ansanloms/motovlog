@@ -2,7 +2,7 @@
 // 組み立て、line() の by に渡して figure() と結び付ける。
 //
 // expressions は表情名から画像レイヤーの列 (下から上の順) への対応。レイヤーは
-// 次の 3 種で、画像のパスはすべて public/ 相対の文字列で書く (figure() が
+// 次の 3 種で、画像のパスはすべて projects/ (public dir) 相対の文字列で書く (figure() が
 // staticFile() を掛ける)。
 // - 静止画 (文字列)。体・腕・眉・小物・顔色効果。
 // - 目 `{ eyes: { open, closed } }`。figure() が目パチで開閉を切り替える。

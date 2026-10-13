@@ -27,7 +27,7 @@
 // `fade(n, { at, in, out })` で timeline の layer に置く。内部は下から
 // 立ち絵 layer (置いた場合のみ)・暗がり layer・発話 layer の順で、`speech`
 // (塊の先頭からの秒) も併せ持つ。各発話の音声キャッシュ
-// (public/projects/<slug>/lines/<key>.json、key.ts の voiceKey()) から
+// (projects/<slug>/assets/lines/<key>.json、key.ts の voiceKey()) から
 // 実尺を読み、位置 (at/after/省略) はこの塊の先頭からの相対秒として解決する。
 // speech は line() item ごとに { at, duration, lipsync, by?, expression? }
 // を持ち、figure() の括り (このファイル下部の figureNode() 呼び出し) の

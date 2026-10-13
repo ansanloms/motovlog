@@ -102,7 +102,7 @@ describe("mergeVoice", () => {
 describe("linePath", () => {
   it("slug と key から相対パスを組む", () => {
     expect(linePath("00000000-sample", "abc123")).toBe(
-      "projects/00000000-sample/lines/abc123",
+      "00000000-sample/assets/lines/abc123",
     );
   });
 });

@@ -1,5 +1,5 @@
 // extractLines() が集めた line (text・reading・voice) ごとに、音声キャッシュ
-// (public/projects/<slug>/lines/<key>.{wav,json}) を生成する (ADR-0010)。
+// (projects/<slug>/assets/lines/<key>.{wav,json}) を生成する (ADR-0010)。
 // 合成には reading (省略時は text) を使う。同じ key (text・reading・voice の
 // hash) の wav・json が両方あれば再生成しない。fs・fetch は実際の I/O を
 // injects しないテストができるよう deps 経由で渡す (scripts/convert の
@@ -22,9 +22,7 @@ import { wavDurationSeconds } from "./wav.ts";
 
 /** generateMissing() が使う I/O・ENGINE 呼び出しの差し替え口。 */
 export type GenerateDeps = {
-  /** public/projects/<slug>/lines の絶対パス。mkdir だけに使う。 */
-  linesDir: string;
-  /** public/ の絶対パス。linePath(slug, key) の相対パスをここに前置してファイルパスを組む。 */
+  /** projects/ (Remotion の public dir、ADR-0020) の絶対パス。linePath(slug, key) の相対パスをここに前置してファイルパスを組む。 */
   publicDir: string;
   /** VOICEVOX ENGINE の URL。 */
   voicevoxUrl: string;
@@ -67,13 +65,12 @@ export const generateMissing = async (
   lines: readonly ExtractedLine[],
   deps: GenerateDeps,
 ): Promise<GenerateResult> => {
-  const { linesDir, publicDir, voicevoxUrl, fetchImpl } = deps;
-
-  deps.mkdir(linesDir);
+  const { publicDir, voicevoxUrl, fetchImpl } = deps;
 
   let generated = 0;
   let skipped = 0;
   const checkedSpeakers = new Set<number>();
+  const madeDirs = new Set<string>();
 
   for (const { text, reading: readingProp, voice } of lines) {
     const resolvedVoice = resolveVoice(voice);
@@ -128,6 +125,13 @@ export const generateMissing = async (
       deps.warn(
         `warn: ${slug}/${key}: mora 合計と wav の実尺の差が ${Math.round(driftSeconds * 1000)} ms`,
       );
+    }
+
+    // 保存先の dir は書き込み先のパスから導く (json も同じ dir)。
+    const dir = path.dirname(wavPath);
+    if (!madeDirs.has(dir)) {
+      deps.mkdir(dir);
+      madeDirs.add(dir);
     }
 
     deps.writeFile(wavPath, wav);

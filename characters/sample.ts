@@ -8,7 +8,7 @@
 // 顔色効果のレイヤーを足すなら、体の上・口の下に並べる)。
 //
 // 画像は同一キャンバス (480x1553、上端の透明余白 12px、足の付け根が全体の
-// 58.3%) の書き出しとし、public/assets/characters/sample/ に置く (座標は
+// 58.3%) の書き出しとし、projects/common/characters/sample/ に置く (座標は
 // どのレイヤーも共通で、figure() は座標計算をしない)。このキャンバスの
 // 比率は src/theme/tokens.ts の figureLayout・thumbLayout が前提にして
 // いるので、差し替える素材も同じ比率に揃える。ここで使う SVG は
@@ -32,7 +32,7 @@
 import { character } from "../src/compositions/character.ts";
 import { narrator } from "../theme/index.ts";
 
-const dir = "assets/characters/sample";
+const dir = "common/characters/sample";
 const part = (name: string) => `${dir}/${name}.svg`;
 
 const body = part("body");

@@ -65,6 +65,6 @@ export const voiceKey = async (params: {
     .join("");
 };
 
-/** key から public/projects/<slug>/lines/<key> (拡張子なし) の相対パスを組む。 */
+/** key から <slug>/assets/lines/<key> (拡張子なし) の projects/ (public dir) 相対パスを組む。 */
 export const linePath = (slug: string, key: string): string =>
-  `projects/${slug}/lines/${key}`;
+  `${slug}/assets/lines/${key}`;

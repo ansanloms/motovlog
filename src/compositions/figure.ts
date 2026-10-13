@@ -227,7 +227,7 @@ export const isBlinking = (
  * expressions[expression] のレイヤー列を、現在の blinking・mouth の状態で
  * 実際の画像パス (下から上の順) に写す純粋関数。静止画 (文字列) はそのまま、
  * 目レイヤーは blinking で開閉を、口レイヤーは mouth で母音を選ぶ。layers は
- * public/ 相対のパスでも staticFile() 済みの URL でもよい (figure() は
+ * projects/ (public dir) 相対のパスでも staticFile() 済みの URL でもよい (figure() は
  * レイヤーごとの staticFile() を先読みして毎フレームは選ぶだけにする、#8)。
  */
 export const layerSources = (
@@ -251,7 +251,7 @@ export const layerSources = (
     return layer;
   });
 
-/** layer の画像パス (public/ 相対) を staticFile() 済みの URL に写す (#8)。 */
+/** layer の画像パス (projects/ 相対) を staticFile() 済みの URL に写す (#8)。 */
 const resolveFigureLayer = (layer: FigureLayer): FigureLayer => {
   if (isEyesLayer(layer)) {
     return {

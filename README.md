@@ -9,7 +9,7 @@ Remotion でモトブログ動画を作るためのライブラリ (lib) と、�
 
 ## ディレクトリ構成
 
-([ADR-0002](docs/adr/0002-project-directory-layout.md)・[ADR-0012](docs/adr/0012-split-template-library-from-consumer.md)・[ADR-0015](docs/adr/0015-split-components-into-modules.md) の要約)
+([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md)・[ADR-0012](docs/adr/0012-split-template-library-from-consumer.md)・[ADR-0015](docs/adr/0015-split-components-into-modules.md) の要約)
 
 lib (動画を作る機能) は次の 3 つ。
 
@@ -24,9 +24,10 @@ lib (動画を作る機能) は次の 3 つ。
 - `theme/index.ts`: カラーパレット (`palette`) と既定の話者 (`narrator`)
 - `projects/<slug>/timeline.ts`: 動画の定義。コミットする
 - `characters/<name>.ts`: キャラクター (立ち絵) の定義。コミットする
-- `public/projects/<slug>/`: 動画固有の素材 (変換済み素材・Studio 用プロキシ・セリフ音声等)。コミットしない
-- `public/assets/<種別>/`: 共通素材。`bgm`・`se`・`characters/<name>`・`fonts`。既定でコミットしない。再配布できる自作素材は `.gitignore` の否定パターンで明示してコミットする
-- `remotion.config.ts`: Remotion の設定。`Config.setEntryPoint("./app/index.ts")` で入口を指す
+- `projects/<slug>/assets/`: 動画固有の素材 (変換済み素材・Studio 用プロキシ・写真・セリフ音声等)。コミットしない
+- `projects/common/<種別>/`: 共通素材。`bgm`・`se`・`characters/<name>`。既定でコミットしない。再配布できる自作素材は `.gitignore` の否定パターンで明示してコミットする
+- `remotion.config.ts`: Remotion の設定。`Config.setEntryPoint("./app/index.ts")` で入口を指し、`Config.setPublicDir("projects")` で public dir を `projects/` に固定する (必須。project ごとに切り替えない)。あわせて `Config.overrideRspackConfig()` で `watchOptions.ignored` に `<root>/projects/*/assets/**` と `<root>/projects/common/**` (絶対パス) を足す (「0.1.x からの移行」の 4)
+- Remotion の public dir は `projects/` で、`staticFile()` のパスは `<slug>/assets/...` と `common/...` になる。`public/` は置かない
 - `<slug>` は `YYYYMMDD-<name>`。同梱のサンプルだけ `00000000-sample` を使う
 
 利用側から lib を import してよいのは次の 5 つの入口と、各 module の入口 (`modules/<name>/index.ts`) だけで、それ以外の `src/`・`modules/` 配下を import すると ESLint が落とす。
@@ -47,32 +48,31 @@ lib (動画を作る機能) は次の 3 つ。
 `@ansanloms/motovlog` は npm レジストリには publish しない (`private: true`)。外部のリポジトリからは GitHub 参照で依存に入れる ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。
 
 ```sh
-npm install github:ansanloms/motovlog#semver:^0.1.0
+npm install github:ansanloms/motovlog#semver:^0.2.0
 ```
 
 取り込みはリリースタグ (`X.Y.Z` 形式。`v` は付けない) の semver 範囲で指定する。`package.json` には次のように書く。module は `@ansanloms/motovlog/modules/<name>` で import する。
 
 ```json
-"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^0.1.0"
+"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^0.2.0"
 ```
 
-0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.1.0` = `>=0.1.0 <0.2.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
+0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.2.0` = `>=0.2.0 <0.3.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
 
 `peerDependencies` (`remotion`・`@remotion/cli`・`@remotion/google-fonts`・`@remotion/media`・`react`・`react-dom`) は利用側の `dependencies` に同じバージョンで入れる。加えて `tsx`・`typescript`・`@types/react`・`@types/node`・`@types/web` を `devDependencies` に入れる (`tsx` は lib の実行時 `dependencies` にも入っているが、利用側の TypeScript の解決には別途要る)。
 
 利用側に次のファイルを作る (実物は同梱のサンプル project、`app/`・`theme/index.ts` を参照)。
 
-| ファイル                      | 内容                                                                     |
-| ----------------------------- | ------------------------------------------------------------------------ |
-| `app/index.ts`                | Temporal polyfill の読み込み・`configure()` の呼び出し・`registerRoot()` |
-| `app/config.ts`               | `theme` の re-export と `defaultProject`。Remotion を import しない      |
-| `theme/index.ts`              | `palette`・`narrator` の値と `theme: Theme`                              |
-| `projects/<slug>/timeline.ts` | 動画の定義 (「新しい動画を作る」参照)                                    |
-| `characters/<name>.ts`        | キャラクターの定義 (「立ち絵」参照)                                      |
-| `remotion.config.ts`          | `Config.setEntryPoint("./app/index.ts")`                                 |
-| `.env`                        | `REMOTION_PROJECT`・`VOICEVOX_URL` (「新しい動画を作る」参照)            |
-| `public/`                     | 素材 (「ディレクトリ構成」参照)                                          |
-| `types/temporal.d.ts`         | `/// <reference types="temporal-polyfill/types/global" />` (下記参照)    |
+| ファイル                      | 内容                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------- |
+| `app/index.ts`                | Temporal polyfill の読み込み・`configure()` の呼び出し・`registerRoot()`    |
+| `app/config.ts`               | `theme` の re-export と `defaultProject`。Remotion を import しない         |
+| `theme/index.ts`              | `palette`・`narrator` の値と `theme: Theme`                                 |
+| `projects/<slug>/timeline.ts` | 動画の定義 (「新しい動画を作る」参照)                                       |
+| `characters/<name>.ts`        | キャラクターの定義 (「立ち絵」参照)                                         |
+| `remotion.config.ts`          | `Config.setEntryPoint("./app/index.ts")`・`Config.setPublicDir("projects")` |
+| `.env`                        | `REMOTION_PROJECT`・`VOICEVOX_URL` (「新しい動画を作る」参照)               |
+| `types/temporal.d.ts`         | `/// <reference types="temporal-polyfill/types/global" />` (下記参照)       |
 
 TypeScript 5.9 には Temporal の型が無いため、`temporal-polyfill/global` が実行時にグローバルへ入れる `Temporal` の型を参照する 1 行だけの `.d.ts` を利用側にも置く (`tsconfig.json` の既定の include に入る場所であれば、パスは上記でなくてよい)。lib の同等のファイル (`src/temporal.d.ts`) は `node_modules` 内にあり、tsc の既定の include には入らないため、利用側で別途持つ必要がある。
 
@@ -105,11 +105,54 @@ import は、このリポジトリ内の相対パスの代わりに bare specifi
 
 main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` の設定で、コミット `X.Y.Z` とタグ `X.Y.Z` (`v` なし) が作られる。続けて `git push --follow-tags` で push する。`npm publish` はしない。利用側が `#semver:` で解決するのはこのタグである ([ADR-0019](docs/adr/0019-distribute-lib-by-git-tag-and-split-video-projects.md))。
 
+## 0.1.x からの移行
+
+0.2.0 で、Remotion の public dir を `projects/` に変え、`public/` を廃止した ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。0.1.x の利用側は次を行う。
+
+1. 依存の範囲を `github:ansanloms/motovlog#semver:^0.2.0` に書き換えて、再インストールする。
+2. `public/projects/<slug>/*` を `projects/<slug>/assets/` へ移す。
+3. `public/assets/*` (`bgm`・`se`・`characters/<name>`) を `projects/common/` へ移す。`public/assets/fonts/` は使われていないので捨てる。
+4. `remotion.config.ts` に `Config.setPublicDir("projects");` と次の `overrideRspackConfig` を足す。理由: `assets/` と `common/` への書き込み (音声キャッシュ・素材の変換) が Studio の再ビルドを起こすため、rspack の watch から外す。Remotion 既定の `ignored` は置き換えず追記する。
+
+   ```ts
+   import path from "node:path";
+
+   Config.overrideRspackConfig((current) => {
+     const ignored = current.watchOptions?.ignored;
+     if (ignored instanceof RegExp) {
+       console.warn(
+         "watchOptions.ignored が RegExp のため ignore を追記できない。assets/ と common/ への書き込みで再ビルドが走る。",
+       );
+       return current;
+     }
+     const projectsDir = path
+       .resolve(process.cwd(), "projects")
+       .split(path.sep)
+       .join("/");
+     const base = Array.isArray(ignored) ? ignored : ignored ? [ignored] : [];
+     return {
+       ...current,
+       watchOptions: {
+         ...current.watchOptions,
+         ignored: [
+           ...base,
+           `${projectsDir}/*/assets/**`,
+           `${projectsDir}/common/**`,
+         ],
+       },
+     };
+   });
+   ```
+5. `.gitignore` と `.worktreeinclude` を新しい配置に合わせる (このリポジトリのものが雛形になる)。
+6. `staticFile()` のパスを直す。`projects/<slug>/<file>` は `<slug>/assets/<file>` に、`assets/<種別>/<file>` は `common/<種別>/<file>` にする。`characters/<name>.ts` の画像パスも `common/characters/<name>/...` にする。
+7. 音声キャッシュ (`lines/`) は `projects/<slug>/assets/lines/` に移るので、移さない場合は `npm run dev` または `npm run render` の音声生成で再生成される。
+8. `tsconfig.json` が `include` を明示していない場合は、`remotion bundle` の出力先 (既定は `build/`) を `exclude` に足す。出力に `projects/**/timeline.ts` が入り、tsc が拾って落ちるため。
+
 ## 新しい動画を作る
 
 1. slug を決めて `projects/<slug>/timeline.ts` を作る。`projects/00000000-sample/timeline.ts` をコピーして書き換えるのが早い。
-2. ドラレコ原本を変換済み素材に変換する: `npm run convert -- <slug> <原本>...`。出力は `public/projects/<slug>/<basename>.mp4`。詳細は「変換済み素材の生成」。
-3. timeline.ts に走行映像・章タイトル・注釈・発話等の要素を書く (「timeline.ts の書き方」)。素材のパスは `public/` 相対 (`projects/<slug>/clip1.mp4`、`projects/<slug>/photos/photo-01.jpg`)。
+2. ドラレコ原本を変換済み素材に変換する: `npm run convert -- <slug> <原本>...`。出力は `projects/<slug>/assets/<basename>.mp4`。詳細は「変換済み素材の生成」。
+3. timeline.ts に走行映像・章タイトル・注釈・発話等の要素を書く (「timeline.ts の書き方」)。素材のパスは `projects/` (public dir) 相対 (`<slug>/assets/clip1.mp4`、`<slug>/assets/photos/photo-01.jpg`)。
 4. プレビュー: `.env` に `REMOTION_PROJECT=<slug>` と `VOICEVOX_URL=<VOICEVOX ENGINE の URL>` を書く。`npm run dev` で起動する。timeline.ts を監視して発話の音声キャッシュを生成しつつ Remotion Studio を起こす。`VOICEVOX_URL` が無いと watcher は生成せず、発話 (`narration()`) を含む project は Studio がキャッシュを 30 秒待った後エラーになる。発話の無い project は影響を受けない。
 5. レンダリング: `.env` の `REMOTION_PROJECT` を render する slug にしてから `npm run render -- out/<slug>.mp4`。先に音声キャッシュを生成してからレンダリングする。Remotion CLI は `.env` の値をシェルの環境変数より優先する (2026-09-11 実測) ため、project を切り替えるときはシェルで渡さず `.env` を書き換える。
 6. 公開したら `git tag render/<slug>` を打つ。再現はタグを checkout して `npm ci` し、素材を復元して render する。
@@ -122,33 +165,33 @@ main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` �
 
 `projects/00000000-sample/timeline.ts` が同梱されている。slug の日付部分は `00000000` にしている (実際の project は `YYYYMMDD` を使う。サンプルだけの例外)。走行映像・立ち絵・OP・章タイトル・写真紹介・ED・BGM・注釈・発話の一通りを並べてあり、新しい project の出発点としてコピーして使う。
 
-立ち絵は `public/assets/characters/sample/` の自作 SVG で、`characters/sample.ts` がこれを参照する。この SVG はリポジトリにコミットしているため、用意は要らない ([ADR-0002](docs/adr/0002-project-directory-layout.md))。ED のクレジットは `theme/index.ts` の `narrator` に対応する VOICEVOX の行だけを持つ。
+立ち絵は `projects/common/characters/sample/` の自作 SVG で、`characters/sample.ts` がこれを参照する。この SVG はリポジトリにコミットしているため、用意は要らない ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。ED のクレジットは `theme/index.ts` の `narrator` に対応する VOICEVOX の行だけを持つ。
 
-残りの素材はコミットしていないので、次を `public/` 配下に用意する。
+残りの素材はコミットしていないので、次を `projects/` 配下に用意する。
 
 | 素材                                                                          | 内容                                                                                                                                       |
 | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `public/projects/00000000-sample/VID_20260802_074903_00_287_359_DASHCAM1.mp4` | ドラレコの変換済み素材。`npm run convert -- 00000000-sample <原本>` で作る。別のファイルを使うなら timeline.ts の `src` を出力名に合わせる |
-| `public/projects/00000000-sample/photos/photo-03.jpg`                         | サムネに使う走行写真                                                                                                                       |
-| `public/projects/00000000-sample/photos/photo-01.jpg`・`photo-02.jpg`         | 写真紹介に使う走行写真                                                                                                                     |
-| `public/assets/bgm/m1.wav`                                                    | サンプルの BGM (`audio()` の例)                                                                                                            |
+| `projects/00000000-sample/assets/VID_20260802_074903_00_287_359_DASHCAM1.mp4` | ドラレコの変換済み素材。`npm run convert -- 00000000-sample <原本>` で作る。別のファイルを使うなら timeline.ts の `src` を出力名に合わせる |
+| `projects/00000000-sample/assets/photos/photo-03.jpg`                         | サムネに使う走行写真                                                                                                                       |
+| `projects/00000000-sample/assets/photos/photo-01.jpg`・`photo-02.jpg`         | 写真紹介に使う走行写真                                                                                                                     |
+| `projects/common/bgm/m1.wav`                                                  | サンプルの BGM (`audio()` の例)                                                                                                            |
 
 素材が手元に無い場合、走行映像は次の ffmpeg で同名の合成素材を作れば代わりに使える。既に同名のファイルがあれば `-n` により上書きせずに終了する。
 
 ```sh
-mkdir -p public/projects/00000000-sample
-ffmpeg -n -f lavfi -i testsrc=size=1920x1080:rate=30:duration=40 -pix_fmt yuv420p public/projects/00000000-sample/VID_20260802_074903_00_287_359_DASHCAM1.mp4
+mkdir -p projects/00000000-sample/assets
+ffmpeg -n -f lavfi -i testsrc=size=1920x1080:rate=30:duration=40 -pix_fmt yuv420p projects/00000000-sample/assets/VID_20260802_074903_00_287_359_DASHCAM1.mp4
 ```
 
 この合成素材にも Studio 用プロキシ (「変換済み素材の生成」の「Studio 用プロキシ」参照) が要るので、続けて次を実行する。
 
 ```sh
-npm run convert -- 00000000-sample public/projects/00000000-sample/VID_20260802_074903_00_287_359_DASHCAM1.mp4
+npm run convert -- 00000000-sample projects/00000000-sample/assets/VID_20260802_074903_00_287_359_DASHCAM1.mp4
 ```
 
 写真 (`photos/photo-01.jpg`・`photo-02.jpg`・`photo-03.jpg`) は ffmpeg では代替できない。手元の JPG を同名で置けばサムネ・写真紹介の見た目は仮のものになるが Studio と render は動く。代替の合成動画は変換済み素材と同じファイル名なので、実素材に切り替えるときは代替ファイルを消してから `npm run convert -- 00000000-sample <原本>` を実行する (既存があると skip される)。
 
-BGM (`assets/bgm/m1.wav`) が無い場合は、サンプルの BGM layer (layer 4) を外すか、手元の wav を同名で置く。
+BGM (`projects/common/bgm/m1.wav`) が無い場合は、サンプルの BGM layer (layer 4) を外すか、手元の wav を同名で置く。
 
 素材を置けば Studio と render が動く (`REMOTION_PROJECT` は未設定でよく、既定でこのサンプルを読む)。
 
@@ -166,7 +209,7 @@ import { thumbnail } from "../../src/compositions/index.ts";
 import { cut, fade, timeline } from "../../src/effects/index.ts";
 import { chapterDurationSec, chapterTiming } from "../../src/theme/index.ts";
 
-const asset = (path: string) => staticFile(`projects/00000000-sample/${path}`);
+const asset = (path: string) => staticFile(`00000000-sample/assets/${path}`);
 
 export default timeline([
   [
@@ -234,7 +277,7 @@ export default timeline([[cut(chapter1, { at: 0 })]]);
 | `audio(props)`         | 音声。`src` (staticFile() 済み URL)・`trimBefore?` (秒)・`volume?`・`loop?`                                                                                                                                                                                                                                                        |
 | `chapter(props)`       | 章タイトル。`title` (文字列、または改行として結合される文字列の配列)・`subtitle`                                                                                                                                                                                                                                                   |
 | `annotation(props)`    | 右上の注釈。`text`                                                                                                                                                                                                                                                                                                                 |
-| `photoShowcase(props)` | 写真紹介 (1〜2 枚)。`photos` (要素は写真の URL、または短い動画 `{ video, trimBefore? }`。動画は音を出さない (常に無音)。動画は `npm run convert` で `public/projects/<slug>/` に置いた変換済み素材を指す (写真の `photos/` ではない))・`fit?` (`"cover"` 既定は枠を満たすよう切る、`"contain"` は切らずに収め、影は媒体の縁に付く) |
+| `photoShowcase(props)` | 写真紹介 (1〜2 枚)。`photos` (要素は写真の URL、または短い動画 `{ video, trimBefore? }`。動画は音を出さない (常に無音)。動画は `npm run convert` で `projects/<slug>/assets/` に置いた変換済み素材を指す (写真の `photos/` ではない))・`fit?` (`"cover"` 既定は枠を満たすよう切る、`"contain"` は切らずに収め、影は媒体の縁に付く) |
 | `ending(props)`        | ED。`title`・`subtitle`・`date`・`distance`・`ridingTime`・`routes`・`credits`                                                                                                                                                                                                                                                     |
 | `subtitleBand({})`     | 字幕下の暗がり (props は無いが引数は要る、通常は `narration()` が組むので直接は使わない)                                                                                                                                                                                                                                           |
 
@@ -300,11 +343,11 @@ project の選択は環境変数 `REMOTION_PROJECT` (slug) で行い、`.env` �
 
 キャラクターの定義は project をまたいで使い回すため `characters/<name>.ts` (リポジトリルート、`projects/` の隣) に置き、`character({ voice?, expressions })` で組み立てて export する。`voice` はこのキャラクターの既定の声質差分 (省略時は `theme/index.ts` の既定話者のまま)。`expressions` は表情名から画像レイヤーの列 (下から上に重ねる順) への対応で、レイヤーは次の 3 種を混ぜて書ける。
 
-- 静止画 (文字列)。体・腕・眉・小物・顔色効果等、パスは `public/` 相対。
+- 静止画 (文字列)。体・腕・眉・小物・顔色効果等、パスは `projects/` (public dir) 相対 (例: `common/characters/<name>/body.png`)。
 - 目 `{ eyes: { open, closed } }`。立ち絵が目パチで開閉を切り替える。
 - 口 `{ mouth: { a, i, u, e, o, n } }`。立ち絵が口パクで母音を切り替える (`n` は無音・撥音・子音の隙間)。
 
-画像はすべて同一キャンバスの PNG または SVG とし、`character()`・`figure()` は座標計算をしない。SVG は幅と高さを持つ形で書き出す ([ADR-0011](docs/adr/0011-draw-figure-from-character-presets-linked-by-speech.md))。素材の切り出し (PSD からのレイヤー書き出し、例えば `psd-tools` を使う) はこのテンプレートの外で行い、`public/assets/characters/<name>/` に置く (第三者素材は既定でコミットしない、「ディレクトリ構成」)。同梱の `characters/sample.ts` は、パーツを単色の図形で描いた SVG の placeholder (`public/assets/characters/sample/`) を参照する。自分のキャラクターを用意するまではこれを差し替え先の雛形として使う。
+画像はすべて同一キャンバスの PNG または SVG とし、`character()`・`figure()` は座標計算をしない。SVG は幅と高さを持つ形で書き出す ([ADR-0011](docs/adr/0011-draw-figure-from-character-presets-linked-by-speech.md))。素材の切り出し (PSD からのレイヤー書き出し、例えば `psd-tools` を使う) はこのテンプレートの外で行い、`projects/common/characters/<name>/` に置く (第三者素材は既定でコミットしない、「ディレクトリ構成」)。同梱の `characters/sample.ts` は、パーツを単色の図形で描いた SVG の placeholder (`projects/common/characters/sample/`) を参照する。自分のキャラクターを用意するまではこれを差し替え先の雛形として使う。
 
 立ち絵は `figure(character, { side?, in?, out?, lead?, tail?, expression? })` で発話の行を括り、`narration()` の入力配列に item と混ぜて置く (ADR-0014、上の「発話」の例を参照)。`character` は `characters/<name>.ts` の戻り値の参照 (`line()` の `by` に渡したのと同じもの)。`narration()` は括りの中の行を配列の順のまま平らにして解決し、括りごとに立ち絵の item を 1 つ作って立ち絵 layer (暗がり・発話より下) に置く。位置は「括りの最初の行の開始 − `lead`」、終端は「括りの最後の行の字幕の終端 + `tail`」とする。`lead`・`tail` の既定値は theme の `characterTiming.lead`・`characterTiming.tail`。位置が塊の先頭より前になる、または前の括りと重なると throw する。`in`/`out` のどちらかを指定すると `fade()`、どちらも無ければ `cut()` で立ち絵 layer に置く。`expression` は初期の表情名 (省略時は `expressions` の最初のキー、または直近の発話の表情を引き継ぐ)。`side` は `"left"` (既定) か `"right"`。右へ移すのは章の区切りでのみ、1 本 2 回まで (T&M「画面配置」)。
 
@@ -320,8 +363,6 @@ ED・サムネ用フレームの絵は要素ファクトリで置けるが、ED 
 
 字幕・立ち絵まわりのフォントは `@remotion/google-fonts/NotoSansJP` (`src/fonts.ts`) を使う。weight は T&M ([docs/design/tone-and-manner.md](docs/design/tone-and-manner.md)、[ADR-0004](docs/adr/0004-define-tone-and-manner.md)) が定める 400・500・600・700 の 4 つだけを読み込む。Noto Sans JP は unicode-range によって 100 を超えるフォントチャンクに分割されているため、`subsets: ["japanese"]` を指定していても実際には多数のチャンクを Google Fonts から取得する。レンダー時にネットワークリクエストに関する警告が多数出力されるが、これは正常な挙動でありエラーではない。
 
-ネットワークに依存したくない場合 (オフライン環境・CI 等) は、`@remotion/fonts` を使って `public/assets/fonts/` 配下に置いたローカルフォントファイルへ差し替えられる ([ADR-0002](docs/adr/0002-project-directory-layout.md))。
-
 ## 変換済み素材の生成
 
 ドラレコ原本 (HEVC) は Remotion に直接読ませず、H.264 の変換済み素材に変換して使う ([ADR-0003](docs/adr/0003-convert-dashcam-footage-to-h264-proxy.md))。この変換は非可逆の再エンコードで、変換済み素材の画質が完成動画の画質の上限になる。`remotion render` は Chrome が描いたフレームをさらに再エンコードする (H.264 の既定 CRF は 18) ため、完成動画は 2 回の非可逆エンコードを経る。変換のエンコード設定は NVENC の `-cq 23` と libx264 の `-crf 22` のどちらか一方が使われる。
@@ -330,7 +371,7 @@ ED・サムネ用フレームの絵は要素ファクトリで置けるが、ED 
 
 `npm run` はリポジトリルートを cwd にして実行するため、入力ファイルは絶対パスで渡す。
 
-- 出力先は `public/projects/<slug>/<basename>.mp4` ([ADR-0002](docs/adr/0002-project-directory-layout.md))。既に存在するファイルはスキップする。
+- 出力先は `projects/<slug>/assets/<basename>.mp4` ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。既に存在するファイルはスキップする。
 - `<slug>` は `YYYYMMDD-<name>` (ASCII 小文字の kebab-case)。形式が違うとエラーになる。
 - フレームレートは `src/theme/timing.ts` の `fps` に固定されており、指定オプションは無い。composition の fps と常に一致する。GOP 長は fps と同じ (1 秒ごとにキーフレーム)。
 - 起動時に NVENC が使えるかを確認し、使えなければ libx264 を使う。NVENC が使える場合でも、あるファイルの変換に失敗したときはそのファイルだけ libx264 で再試行する。一度 libx264 に落ちたら以降のファイルも libx264 で変換する。WSL で NVENC を使うために `LD_LIBRARY_PATH=/usr/lib/wsl/lib` をスクリプト内で設定している。
@@ -338,10 +379,10 @@ ED・サムネ用フレームの絵は要素ファクトリで置けるが、ED 
 
 ### Studio 用プロキシ
 
-変換済み素材に加えて `public/projects/<slug>/<basename>.preview.mp4` (Studio 用プロキシ) を作る ([ADR-0013](docs/adr/0013-add-preview-proxy-for-studio.md))。`npm run dev` (Remotion Studio) はこのプロキシを読み、`remotion render` は変換済み素材 (本体) を読む。
+変換済み素材に加えて `projects/<slug>/assets/<basename>.preview.mp4` (Studio 用プロキシ) を作る ([ADR-0013](docs/adr/0013-add-preview-proxy-for-studio.md))。`npm run dev` (Remotion Studio) はこのプロキシを読み、`remotion render` は変換済み素材 (本体) を読む。
 
 - プロキシは変換済み素材から生成する H.264 で、既定は 540p。`.env` の `PREVIEW_HEIGHT` (2 以上の偶数) で解像度を変えられる。`npm run dev` と同じく `npm run convert` も `.env` を読む。
-- 既に変換済み素材だけがある project にプロキシを追加するときは、変換済み素材自身を入力にして `npm run convert` を再実行する。例: `npm run convert -- 00000000-sample public/projects/00000000-sample/*.mp4`。この glob は生成済みのプロキシ (`*.preview.mp4`) も拾うが、`.preview.mp4` で終わる入力は convert がスキップするため、そのまま再実行して構わない。
+- 既に変換済み素材だけがある project にプロキシを追加するときは、変換済み素材自身を入力にして `npm run convert` を再実行する。例: `npm run convert -- 00000000-sample projects/00000000-sample/assets/*.mp4`。この glob は生成済みのプロキシ (`*.preview.mp4`) も拾うが、`.preview.mp4` で終わる入力は convert がスキップするため、そのまま再実行して構わない。
 
 ## コーディング規約
 
