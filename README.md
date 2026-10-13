@@ -26,7 +26,7 @@ lib (動画を作る機能) は次の 3 つ。
 - `characters/<name>.ts`: キャラクター (立ち絵) の定義。コミットする
 - `projects/<slug>/assets/`: 動画固有の素材 (変換済み素材・Studio 用プロキシ・写真・セリフ音声等)。コミットしない
 - `projects/common/<種別>/`: 共通素材。`bgm`・`se`・`characters/<name>`。既定でコミットしない。再配布できる自作素材は `.gitignore` の否定パターンで明示してコミットする
-- `remotion.config.ts`: Remotion の設定。`Config.setEntryPoint("./app/index.ts")` で入口を指し、`Config.setPublicDir("projects")` で public dir を `projects/` に固定する (必須。project ごとに切り替えない)。あわせて `Config.overrideRspackConfig()` で `watchOptions.ignored` に `<root>/projects/*/assets/**` と `<root>/projects/common/**` (絶対パス) を足す (「0.1.x からの移行」の 4)
+- `remotion.config.ts`: Remotion の設定。`Config.setEntryPoint("./app/index.ts")` で入口を指し、`applyMotovlogConfig(Config)` (`@ansanloms/motovlog/remotion-config`) を呼ぶ。この関数が public dir を `projects/` に固定し (`Config.setPublicDir("projects")`。project ごとに切り替えない)、Rspack の有効化と、`watchOptions.ignored` への `<root>/projects/*/assets/**` と `<root>/projects/common/**` (絶対パス) の追記を行う ([ADR-0021](docs/adr/0021-provide-remotion-layout-config-from-lib.md))
 - Remotion の public dir は `projects/` で、`staticFile()` のパスは `<slug>/assets/...` と `common/...` になる。`public/` は置かない
 - `<slug>` は `YYYYMMDD-<name>`。同梱のサンプルだけ `00000000-sample` を使う
 
@@ -48,31 +48,31 @@ lib (動画を作る機能) は次の 3 つ。
 `@ansanloms/motovlog` は npm レジストリには publish しない (`private: true`)。外部のリポジトリからは GitHub 参照で依存に入れる ([ADR-0012](docs/adr/0012-split-template-library-from-consumer.md))。
 
 ```sh
-npm install github:ansanloms/motovlog#semver:^0.2.0
+npm install github:ansanloms/motovlog#semver:^0.3.0
 ```
 
 取り込みはリリースタグ (`X.Y.Z` 形式。`v` は付けない) の semver 範囲で指定する。`package.json` には次のように書く。module は `@ansanloms/motovlog/modules/<name>` で import する。
 
 ```json
-"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^0.2.0"
+"@ansanloms/motovlog": "github:ansanloms/motovlog#semver:^0.3.0"
 ```
 
-0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.2.0` = `>=0.2.0 <0.3.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
+0.x の間、caret 範囲は同じ minor の中の patch 更新だけを受け入れる (`^0.3.0` = `>=0.3.0 <0.4.0`。npm の semver の規則)。minor を上げた版へ移るときは、利用側が範囲を書き換える。
 
 `peerDependencies` (`remotion`・`@remotion/cli`・`@remotion/google-fonts`・`@remotion/media`・`react`・`react-dom`) は利用側の `dependencies` に同じバージョンで入れる。加えて `tsx`・`typescript`・`@types/react`・`@types/node`・`@types/web` を `devDependencies` に入れる (`tsx` は lib の実行時 `dependencies` にも入っているが、利用側の TypeScript の解決には別途要る)。
 
 利用側に次のファイルを作る (実物は同梱のサンプル project、`app/`・`theme/index.ts` を参照)。
 
-| ファイル                      | 内容                                                                        |
-| ----------------------------- | --------------------------------------------------------------------------- |
-| `app/index.ts`                | Temporal polyfill の読み込み・`configure()` の呼び出し・`registerRoot()`    |
-| `app/config.ts`               | `theme` の re-export と `defaultProject`。Remotion を import しない         |
-| `theme/index.ts`              | `palette`・`narrator` の値と `theme: Theme`                                 |
-| `projects/<slug>/timeline.ts` | 動画の定義 (「新しい動画を作る」参照)                                       |
-| `characters/<name>.ts`        | キャラクターの定義 (「立ち絵」参照)                                         |
-| `remotion.config.ts`          | `Config.setEntryPoint("./app/index.ts")`・`Config.setPublicDir("projects")` |
-| `.env`                        | `REMOTION_PROJECT`・`VOICEVOX_URL` (「新しい動画を作る」参照)               |
-| `types/temporal.d.ts`         | `/// <reference types="temporal-polyfill/types/global" />` (下記参照)       |
+| ファイル                      | 内容                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `app/index.ts`                | Temporal polyfill の読み込み・`configure()` の呼び出し・`registerRoot()` |
+| `app/config.ts`               | `theme` の re-export と `defaultProject`。Remotion を import しない      |
+| `theme/index.ts`              | `palette`・`narrator` の値と `theme: Theme`                              |
+| `projects/<slug>/timeline.ts` | 動画の定義 (「新しい動画を作る」参照)                                    |
+| `characters/<name>.ts`        | キャラクターの定義 (「立ち絵」参照)                                      |
+| `remotion.config.ts`          | `Config.setEntryPoint("./app/index.ts")`・`applyMotovlogConfig(Config)`  |
+| `.env`                        | `REMOTION_PROJECT`・`VOICEVOX_URL` (「新しい動画を作る」参照)            |
+| `types/temporal.d.ts`         | `/// <reference types="temporal-polyfill/types/global" />` (下記参照)    |
 
 TypeScript 5.9 には Temporal の型が無いため、`temporal-polyfill/global` が実行時にグローバルへ入れる `Temporal` の型を参照する 1 行だけの `.d.ts` を利用側にも置く (`tsconfig.json` の既定の include に入る場所であれば、パスは上記でなくてよい)。lib の同等のファイル (`src/temporal.d.ts`) は `node_modules` 内にあり、tsc の既定の include には入らないため、利用側で別途持つ必要がある。
 
@@ -105,44 +105,38 @@ import は、このリポジトリ内の相対パスの代わりに bare specifi
 
 main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` の設定で、コミット `X.Y.Z` とタグ `X.Y.Z` (`v` なし) が作られる。続けて `git push --follow-tags` で push する。`npm publish` はしない。利用側が `#semver:` で解決するのはこのタグである ([ADR-0019](docs/adr/0019-distribute-lib-by-git-tag-and-split-video-projects.md))。
 
+## `remotion.config.ts` の書き方
+
+利用側の `remotion.config.ts` は次の形にする。入口・画像形式・上書き・ライセンスキーは利用側が決める。public dir・Rspack・watch の ignore は `applyMotovlogConfig` が受け持つ ([ADR-0021](docs/adr/0021-provide-remotion-layout-config-from-lib.md))。
+
+```ts
+import { Config } from "@remotion/cli/config";
+import { applyMotovlogConfig } from "@ansanloms/motovlog/remotion-config";
+
+Config.setEntryPoint("./app/index.ts");
+applyMotovlogConfig(Config);
+Config.setVideoImageFormat("jpeg");
+Config.setOverwriteOutput(true);
+Config.setPublicLicenseKey("free-license");
+```
+
+`@ansanloms/motovlog/remotion-config` は CommonJS (`config/remotion.cjs`) で、Remotion が `remotion.config.ts` の bundle 越しに実行時に `require()` する。`applyMotovlogConfig` の後に `Config.overrideRspackConfig()` を呼ぶと、追加で登録した override は lib の override の後に連鎖するため、利用側の関数は lib の追記済みの設定を受け取る。`watchOptions.ignored` に触るときは、その追記済みの要素を残す。上書きになる (後勝ち) のは `Config.setPublicDir()` と `Config.setRspack()` で、`applyMotovlogConfig` と異なる値では呼ばない。
+
+## 0.2.x からの移行
+
+0.3.0 で、レイアウト契約に関わる Remotion の設定を lib の関数 `applyMotovlogConfig` にまとめた ([ADR-0021](docs/adr/0021-provide-remotion-layout-config-from-lib.md))。0.2.x の利用側は次を行う。
+
+1. 依存の範囲を `github:ansanloms/motovlog#semver:^0.3.0` に書き換えて、再インストールする。
+2. `remotion.config.ts` に写した `Config.setPublicDir("projects")`・`Config.setRspack(true)`・`Config.overrideRspackConfig(...)` のブロックを消し、`applyMotovlogConfig(Config)` の呼び出しに置き換える (書き方は前節)。`import path from "node:path"` が他で使われていなければ消す。
+
 ## 0.1.x からの移行
 
 0.2.0 で、Remotion の public dir を `projects/` に変え、`public/` を廃止した ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。0.1.x の利用側は次を行う。
 
-1. 依存の範囲を `github:ansanloms/motovlog#semver:^0.2.0` に書き換えて、再インストールする。
+1. 依存の範囲を `github:ansanloms/motovlog#semver:^0.3.0` に書き換えて、再インストールする。
 2. `public/projects/<slug>/*` を `projects/<slug>/assets/` へ移す。
 3. `public/assets/*` (`bgm`・`se`・`characters/<name>`) を `projects/common/` へ移す。`public/assets/fonts/` は使われていないので捨てる。
-4. `remotion.config.ts` に `Config.setPublicDir("projects");` と次の `overrideRspackConfig` を足す。理由: `assets/` と `common/` への書き込み (音声キャッシュ・素材の変換) が Studio の再ビルドを起こすため、rspack の watch から外す。Remotion 既定の `ignored` は置き換えず追記する。
-
-   ```ts
-   import path from "node:path";
-
-   Config.overrideRspackConfig((current) => {
-     const ignored = current.watchOptions?.ignored;
-     if (ignored instanceof RegExp) {
-       console.warn(
-         "watchOptions.ignored が RegExp のため ignore を追記できない。assets/ と common/ への書き込みで再ビルドが走る。",
-       );
-       return current;
-     }
-     const projectsDir = path
-       .resolve(process.cwd(), "projects")
-       .split(path.sep)
-       .join("/");
-     const base = Array.isArray(ignored) ? ignored : ignored ? [ignored] : [];
-     return {
-       ...current,
-       watchOptions: {
-         ...current.watchOptions,
-         ignored: [
-           ...base,
-           `${projectsDir}/*/assets/**`,
-           `${projectsDir}/common/**`,
-         ],
-       },
-     };
-   });
-   ```
+4. `remotion.config.ts` を「`remotion.config.ts` の書き方」のとおり書く (`applyMotovlogConfig(Config)` を呼ぶ)。0.2.0 の時点ではこの関数は無く、`Config.setPublicDir("projects")` と `watchOptions.ignored` を追記する `overrideRspackConfig` を直に書く必要があったが、0.3.0 以降は関数が持つ。理由: `assets/` と `common/` への書き込み (音声キャッシュ・素材の変換) が Studio の再ビルドを起こすため、rspack の watch から外す。
 5. `.gitignore` と `.worktreeinclude` を新しい配置に合わせる (このリポジトリのものが雛形になる)。
 6. `staticFile()` のパスを直す。`projects/<slug>/<file>` は `<slug>/assets/<file>` に、`assets/<種別>/<file>` は `common/<種別>/<file>` にする。`characters/<name>.ts` の画像パスも `common/characters/<name>/...` にする。
 7. 音声キャッシュ (`lines/`) は `projects/<slug>/assets/lines/` に移るので、移さない場合は `npm run dev` または `npm run render` の音声生成で再生成される。
