@@ -40,12 +40,12 @@ type Props = {
   photos: readonly (string | PhotoImage | PhotoVideo)[];
   /**
    * 枠への収め方。`cover` (既定) は枠を満たすよう切る、`contain` は切らずに
-   * 収め、影は媒体の縁に付ける。
+   * 収め、影とキャプションの帯は見える媒体の縁に付ける。
    */
   fit?: "cover" | "contain";
 };
 
-/** キャプションを描く。帯はセル (写真の枠) に対して置き、媒体の縁には沿わない。 */
+/** キャプションを描く。帯は .box (cover では枠、contain では見える媒体の矩形) に対して置く。 */
 const CaptionBand: React.FC<{ caption?: Caption }> = ({ caption }) =>
   caption && caption.text.trim() !== "" ? (
     <div
@@ -62,13 +62,15 @@ const PhotoVideoCell: React.FC<{
   fit: "cover" | "contain";
 }> = ({ photo, fit }) => (
   <div className={styles.cell}>
-    <Video
-      src={photo.video}
-      trimBefore={photo.trimBefore}
-      volume={0}
-      objectFit={fit}
-    />
-    <CaptionBand caption={photo.caption} />
+    <div className={styles.box}>
+      <Video
+        src={photo.video}
+        trimBefore={photo.trimBefore}
+        volume={0}
+        objectFit={fit}
+      />
+      <CaptionBand caption={photo.caption} />
+    </div>
   </div>
 );
 
@@ -81,8 +83,10 @@ const PhotoImageCell: React.FC<{ photo: string | PhotoImage }> = ({
 
   return (
     <div className={styles.cell}>
-      <Img src={image} className={styles.media} />
-      <CaptionBand caption={caption} />
+      <div className={styles.box}>
+        <Img src={image} className={styles.media} />
+        <CaptionBand caption={caption} />
+      </div>
     </div>
   );
 };

@@ -18,8 +18,15 @@
   grid-auto-columns: var(--photo-single-width);
 }
 
-/* 写真・動画 1 個の枠。キャプションはこの枠に対して置く。 */
+/* 写真・動画 1 個の枠。キャプションは .box に対して置く。 */
 .cell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* cover は .box が枠を満たす。影は枠 (= .box) に付く。 */
+.box {
   position: relative;
   width: 100%;
   height: 100%;
@@ -34,17 +41,50 @@
 }
 
 /*
- * contain は切らずに収める。影は枠でなく媒体の縁に付ける (余白は透明)。
- * キャプションに影が掛からないよう、filter は媒体だけに掛ける。動画
- * (Video) は className を受けないため、キャプション以外の子で指す。
+ * contain は切らずに収める。.box が媒体の見える矩形に縮んで巻き付き、
+ * 影とキャプションの帯はその .box に付く (余白は透明)。帯は .box の子なので
+ * 媒体の縁に沿い、影は .box の box-shadow なので帯に掛からない。
+ *
+ * 写真は縮小も拡大もして枠に収めたい。width/height: auto + max-width/
+ * max-height では縮小しかできない (固有寸法より大きくならない) ため、zoom で
+ * 固有寸法を 100 倍して「どの画像も十分大きい」状態にし、max を 1/100 に
+ * した枠 (cq 単位は .cell が基準) で頭打ちにする。auto の幅・高さは比率を
+ * 保つので、枠に収まる最大の矩形になる。100 は計算用の定数で見た目の値では
+ * ない。上限は Chromium の LayoutUnit (約 3355 万 px) を 100 で割った約
+ * 33.5 万 px で、これを超える画像は飽和して歪む。下限は約 10px で、これより
+ * 大きい画像なら 960x696 の枠まで拡大して収まる (それ未満は枠より小さいまま)。
+ * zoom は子の長さを 100 倍するため、媒体には影などの長さを持つ指定を
+ * 置かない (影は .box に付ける)。動画 (Video) の <canvas> にも同じ指定が効く。
  */
 .frame[data-fit="contain"] .cell {
-  box-shadow: none;
+  container-type: size;
+  display: grid;
+  place-items: center;
 }
 
-.frame[data-fit="contain"] .cell > :not(.caption) {
-  object-fit: contain;
-  filter: drop-shadow(var(--shadow-photo));
+.frame[data-fit="contain"] .box {
+  display: block;
+  width: auto;
+  height: auto;
+}
+
+.frame[data-fit="contain"] .box > :not(.caption) {
+  zoom: 100;
+  /* inline のままだと <canvas> の下にベースライン由来の隙間ができる。
+   * block にして .box (下端のキャプション帯と影) を媒体の下端で終わらせる。 */
+  display: block;
+  /* .media の object-fit: cover を上書きして画像を切らない。.box は既に
+   * 画像の比率なので、fill は LayoutUnit の端数丸めを吸収するだけ。 */
+  object-fit: fill;
+  /*
+   * 動画 (Video) は className を受けず、<canvas> に width/height: 100% を
+   * インラインで持つ。canvas の固有寸法は動画の寸法なので、auto に戻せば
+   * 写真と同じ扱いになる。インラインを上書きするため !important が要る。
+   */
+  width: auto !important;
+  height: auto !important;
+  max-width: calc(100cqw / 100);
+  max-height: calc(100cqh / 100);
 }
 
 .caption {
