@@ -9,6 +9,7 @@ import {
   fade,
   frame,
   group,
+  pan,
   start,
   timeline,
 } from "../effects/index.ts";
@@ -1059,5 +1060,11 @@ describe("narration", () => {
       expect(speechItem.at).toBeCloseTo(5, 6);
       expect(result.layers[1][0].at).toBeCloseTo(speechItem.at, 6);
     });
+  });
+});
+
+describe("line() と pan()", () => {
+  it("pan() は line() を実行時に throw する (型では弾けない)", () => {
+    expect(() => pan(line({ text: "こんにちは" }))).toThrow(/line\(\)/);
   });
 });

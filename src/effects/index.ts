@@ -5,6 +5,7 @@ export { fade } from "./fade.ts";
 export { frame, isFrame } from "./frame.ts";
 export { fadeOpacity, toFrame, toFrameSpan } from "./frames.ts";
 export { group, isGroup } from "./group.ts";
+export { isPan, pan } from "./pan.ts";
 export { isSample, sample } from "./sample.ts";
 export { Stage } from "./Stage.tsx";
 export {
@@ -30,4 +31,5 @@ export type {
   Transition,
 } from "./types.ts";
 export type { GroupNode } from "./group.ts";
+export type { PanNode, PanPoint } from "./pan.ts";
 export type { SampleNode, SampleTime } from "./sample.ts";

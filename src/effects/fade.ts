@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { isFrame } from "./frame.ts";
 import type { GroupNode } from "./group.ts";
+import type { PanNode } from "./pan.ts";
 import type { SampleNode } from "./sample.ts";
 import type { FadeItem, FrameMarker, Placement, Span } from "./types.ts";
 
@@ -31,11 +32,11 @@ type FadeOptions<Node> = Placement &
  * item は duration がここでは決まらないため、この検査は timeline() の
  * resolveLayer が開始位置と until を解決した後に行う。node には frame()
  * (FrameMarker、合成結果への効果) や sample() (SampleNode、Stage が
- * 毎フレーム render を呼ぶ)、group() (GroupNode、塊) も渡せる (この場合は
+ * 毎フレーム render を呼ぶ)、pan() (PanNode、尺は duration/until で決まる)、group() (GroupNode、塊) も渡せる (この場合は
  * duration/until を省略でき、塊の内容の尺になる。ADR-0014)。
  */
 export const fade = <
-  Node extends ReactNode | FrameMarker | SampleNode | GroupNode,
+  Node extends ReactNode | FrameMarker | SampleNode | PanNode | GroupNode,
 >(
   node: Node,
   options: FadeOptions<Node>,

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { GroupNode } from "./group.ts";
+import type { PanNode } from "./pan.ts";
 import type { SampleNode } from "./sample.ts";
 
 /**
@@ -87,7 +88,7 @@ type NoSpan = { readonly duration?: never; readonly until?: never };
  * cut()/fade() の node と span (duration/until) の組。node が塊
  * (GroupNode) のときだけ span を省略できる (ADR-0014、省略時は塊の内容の
  * 尺になる)。NonGroupNode は塊以外で node に渡せる型 (cut() は
- * ReactNode | SampleNode、fade() はさらに FrameMarker も含む)。
+ * ReactNode | SampleNode | PanNode、fade() はさらに FrameMarker も含む)。
  */
 type NodeSpan<NonGroupNode> =
   | ({ readonly node: NonGroupNode } & Span)
@@ -112,7 +113,7 @@ export type FadeItem = Placement & {
    * narration() 以外の書き手は指定しない。
    */
   readonly source?: Item | PendingCutItem;
-} & NodeSpan<ReactNode | FrameMarker | SampleNode>;
+} & NodeSpan<ReactNode | FrameMarker | SampleNode | PanNode>;
 
 /** cut() が組み立てるアイテム。node をフェード無しで重ねる。 */
 export type CutItem = Placement & {
@@ -124,7 +125,7 @@ export type CutItem = Placement & {
    * narration() 以外の書き手は指定しない。
    */
   readonly source?: Item | PendingCutItem;
-} & NodeSpan<ReactNode | SampleNode>;
+} & NodeSpan<ReactNode | SampleNode | PanNode>;
 
 /**
  * cut() が duration も until も省いて組み立てるアイテム。narration() が
@@ -135,7 +136,7 @@ export type CutItem = Placement & {
  */
 export type PendingCutItem = Placement & {
   readonly kind: "cut";
-  readonly node: ReactNode | SampleNode;
+  readonly node: ReactNode | SampleNode | PanNode;
   readonly source?: Item | PendingCutItem;
 } & NoSpan;
 

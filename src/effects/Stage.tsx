@@ -9,10 +9,13 @@ import {
   fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
+  panTransform,
   toFrame,
   toFrameSpan,
   transitionFrames,
 } from "./frames.ts";
+import { isPan } from "./pan.ts";
+import type { PanNode } from "./pan.ts";
 import { isSample } from "./sample.ts";
 import type { SampleTime } from "./sample.ts";
 import type {
@@ -49,7 +52,7 @@ const isFrameItem = (
  * 合成結果を `<FrameEffects>` で包む (AviUtl のフレームバッファ型。塊の中に
  * `frame()` は置けない (resolveLayer が throw する) ため、groupFrom !== 0
  * の呼び出しでは現れない)。`sample()` の item は `<Sampled>` が毎フレーム
- * render を呼ぶ。塊 (`item.group`) の item は、内部 layers を再帰的に同じ
+ * render を呼び、`pan()` の item は `<Panned>` が毎フレーム transform を当てる。塊 (`item.group`) の item は、内部 layers を再帰的に同じ
  * 関数で描く。
  *
  * item.at・item.duration は常に動画先頭からの絶対秒で持つ (塊の中の item も
@@ -89,6 +92,8 @@ const renderLayers = (
               renderLayers(item.group.layers, fps, absoluteFrom)
             ) : isSample(rawNode) ? (
               <Sampled render={rawNode.render} from={from} fps={fps} />
+            ) : isPan(rawNode) ? (
+              <Panned pan={rawNode} durationInFrames={durationInFrames} />
             ) : (
               (rawNode as React.ReactNode)
             );
@@ -218,6 +223,35 @@ const Sampled: React.FC<{
     <>
       {render({ frame, seconds: frame / fps, absolute: (from + frame) / fps })}
     </>
+  );
+};
+
+/**
+ * pan() の node を、Sequence 内 (0 起点) の frame から計算した transform で
+ * 動かす。外側の overflow: hidden で拡大した分のはみ出しを切る。
+ */
+const Panned: React.FC<{
+  pan: PanNode;
+  durationInFrames: number;
+}> = ({ pan, durationInFrames }) => {
+  const frame = useCurrentFrame();
+  const { translateX, translateY, scale } = panTransform({
+    frame,
+    durationInFrames,
+    from: pan.from,
+    to: pan.to,
+  });
+
+  return (
+    <AbsoluteFill style={{ overflow: "hidden" }}>
+      <AbsoluteFill
+        style={{
+          transform: `translate(${translateX}%, ${translateY}%) scale(${scale})`,
+        }}
+      >
+        {pan.node}
+      </AbsoluteFill>
+    </AbsoluteFill>
   );
 };
 

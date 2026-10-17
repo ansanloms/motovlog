@@ -5,6 +5,7 @@ import { crossfade } from "./crossfade.ts";
 import { cut } from "./cut.ts";
 import { fade } from "./fade.ts";
 import { frame, isFrame } from "./frame.ts";
+import { isPan, pan } from "./pan.ts";
 import { isSample, sample } from "./sample.ts";
 import { timeline } from "./timeline.ts";
 import type { CutItem, FadeItem } from "./types.ts";
@@ -771,5 +772,27 @@ describe("timeline: sample()", () => {
     const result = timeline([[fade(sample(render), { duration: 1, in: 0.5 })]]);
 
     expect(isSample(result.layers[0][0].node)).toBe(true);
+  });
+});
+
+describe("timeline: pan", () => {
+  it("cut(pan(...)) と crossfade 後の fade(pan(...)) は PanNode を node のまま保つ", () => {
+    const a = pan("a", { to: { scale: 1.2 } });
+    const b = pan("b", { from: { scale: 1.2 }, to: { x: 0, scale: 1.2 } });
+
+    const result = timeline([
+      [
+        cut(a, { duration: 5 }),
+        crossfade({ duration: 1 }),
+        fade(b, { duration: 20, in: 3 }),
+      ],
+    ]);
+
+    expect(result.layers[0][0].node).toBe(a);
+    expect(result.layers[0][0].duration).toBe(5);
+    expect(isPan(result.layers[0][1].node)).toBe(true);
+    expect(result.layers[0][1].node).toBe(b);
+    expect(result.layers[0][1].at).toBe(4);
+    expect(result.layers[0][1].duration).toBe(20);
   });
 });
