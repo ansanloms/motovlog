@@ -35,7 +35,7 @@ lib (動画を作る機能) は次の 3 つ。
 | 入口                                 | 実体                        | 主な中身                                                                                                                                                                                                     |
 | ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `@ansanloms/motovlog`                | `src/index.ts`              | `configure`・`RemotionRoot`・`Motovlog` と、下の 4 つの再 export                                                                                                                                             |
-| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`                                                                                                                                     |
+| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`・`pan`                                                                                                                              |
 | `@ansanloms/motovlog/components`     | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending` 等)                                                                                                                                                    |
 | `@ansanloms/motovlog/compositions`   | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                                                                                                                                                      |
 | `@ansanloms/motovlog/theme`          | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)                                                                                                                                          |
@@ -143,6 +143,7 @@ main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` �
      };
    });
    ```
+
 5. `.gitignore` と `.worktreeinclude` を新しい配置に合わせる (このリポジトリのものが雛形になる)。
 6. `staticFile()` のパスを直す。`projects/<slug>/<file>` は `<slug>/assets/<file>` に、`assets/<種別>/<file>` は `common/<種別>/<file>` にする。`characters/<name>.ts` の画像パスも `common/characters/<name>/...` にする。
 7. 音声キャッシュ (`lines/`) は `projects/<slug>/assets/lines/` に移るので、移さない場合は `npm run dev` または `npm run render` の音声生成で再生成される。
@@ -253,6 +254,29 @@ layer 内の item の位置は次のいずれかで指定する。
 
 layer 内の item と item の間には `crossfade({ duration, audio? })` を置ける。直後の item は直前の終端から遷移の尺だけ戻って始まり、その区間で重なる (直後の item に `at`/`after` は書けない)。`audio` は既定 false (不透明度だけ)。true を付けると重なり区間の音を入る側 0 から 1、出る側 1 から 0 の等パワー曲線で交差させる。`timeline()` は、遷移が layer の先頭・末尾にある、遷移が連続する、遷移の尺が前後どちらかの item の尺より長い、遷移が 1 フレームに満たない、直前の item が `out` を持つ `fade` である、前後どちらかが `frame()` の item である、のいずれかで throw する。`fade(frame(), options)` は下の layer の合成結果にフェードをかける (layer 0 には置けない)。`at` には `start(item, offset?)` / `end(item, offset?)` で、どの layer に置かれた item でも開始・終端を基準にした位置を渡せる。`timeline()` は item 間の依存関係の順で解決する (配列の順とは限らない) ため layer をまたいだ参照方向は問わないが、参照が循環している (同じ layer の後ろの item への参照も循環になる) か、どの layer にも置かれていない item を指すと throw する。尺は `duration` (秒数) の代わりに `until: number | Anchor` (終端の絶対秒または Anchor、`duration` とは排他) も指定できる。開始位置を解決した後に `duration = until − 開始` を求めるため、他の item の終端に合わせて尺を決められる (例: `fade(figure, { at: 0, until: end(line, 0.5) })`)。
 
+### 拡大・移動 (pan)
+
+`pan(node, { from?, to? })` は node を item の尺の間、`from` から `to` へ線形に動かす (Ken Burns)。`cut`/`fade`/`crossfade` の node にそのまま渡せ、尺は item の `duration`/`until` だけで決まる。
+
+```ts
+import { cut, fade, pan } from "../../src/effects/index.ts";
+
+fade(pan(still, { from: { x: 100, scale: 1.2 }, to: { x: 0 } }), {
+  duration: 20,
+  in: 3,
+});
+cut(pan(video({ src }), { to: { scale: 1.2 } }), {
+  duration: 5,
+});
+```
+
+- `from`/`to` は `{ x?, y?, scale? }`。`from` の省略した項目は `x: 50`・`y: 50`・`scale: 1`、`to` の省略した項目は `from` の値で埋める (`to` を丸ごと省くと `from` と同じ)。
+- `x`/`y` は 0〜100 で、CSS の `object-position` と同じ意味 (拡大した要素のどの部分が見えるか)。0 で左 (上) 端、100 で右 (下) 端を揃え、50 で中央。
+- `scale` は 1 以上。`from`・`to` の両方が `scale: 1` のまま `x`/`y` を変える指定は、動かせる余白が無く画面が動かないため `pan()` が throw する。動かすには少なくとも一方の `scale` を 1 より大きくする。
+- 範囲外の `x`/`y`、1 未満の `scale`、有限でない数は `pan()` が throw する (要素の端が画面に見えないようにするため)。
+- 補間は線形のみ (イージングは無い)。最初のフレームが `from`、最後のフレームが `to`。
+- `pan()` に渡せるのは通常の node だけ。`group()`・`sample()`・`frame()`・`pan()` は型エラーになる。`line()` は型では弾けないが、`narration()` の item の node に使うものなので `pan()` が throw する。
+
 ### 塊 (group)
 
 `group(layers)` は `layers` (item の配列の配列。`timeline()` の `layers` と同じ形) を塊にまとめ、`cut(group(...), options)`・`fade(group(...), options)` で他の item と同じように layer に置ける。塊の中の item の位置 (`at`・`after`・省略) は塊自身の位置指定 (`timeline()`) とは別に、塊の先頭からの相対秒として解決する (アンカー・`until`・`crossfade` も塊の中で同じ規則のまま使える)。塊の item の `duration`/`until` を省くと、内部の全 item の終端の最大値が塊の尺になる (内容の尺)。`duration`/`until` を明示したときは、内部の item がその尺を超えたら `timeline()` が throw する (超えなければ、内容より長い尺も指定できる)。
@@ -271,15 +295,15 @@ export default timeline([[cut(chapter1, { at: 0 })]]);
 
 要素は `@ansanloms/motovlog/components` が公開する要素ファクトリで組み立てる。各ファクトリは対応するコンポーネントと同じ props を受け、フレーム依存の値は持たない。
 
-| ファクトリ             | 内容                                                                                                                                                                                                                                                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `video(props)`         | 走行映像。`src` (staticFile() 済み URL)・`trimBefore?` (秒)・`volume?`                                                                                                                                                                                                                                                             |
-| `audio(props)`         | 音声。`src` (staticFile() 済み URL)・`trimBefore?` (秒)・`volume?`・`loop?`                                                                                                                                                                                                                                                        |
-| `chapter(props)`       | 章タイトル。`title` (文字列、または改行として結合される文字列の配列)・`subtitle`                                                                                                                                                                                                                                                   |
-| `annotation(props)`    | 右上の注釈。`text`                                                                                                                                                                                                                                                                                                                 |
+| ファクトリ             | 内容                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `video(props)`         | 走行映像。`src` (staticFile() 済み URL)・`trimBefore?` (秒)・`volume?`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `audio(props)`         | 音声。`src` (staticFile() 済み URL)・`trimBefore?` (秒)・`volume?`・`loop?`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `chapter(props)`       | 章タイトル。`title` (文字列、または改行として結合される文字列の配列)・`subtitle`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `annotation(props)`    | 右上の注釈。`text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `photoShowcase(props)` | 写真紹介 (1〜2 枚)。`photos` (要素は写真の URL、`{ image, caption? }`、または短い動画 `{ video, trimBefore?, caption? }`。動画は音を出さない (常に無音)。動画は `npm run convert` で `projects/<slug>/assets/` に置いた変換済み素材を指す (写真の `photos/` ではない)。`caption: { text, position? }` は写真に添える文字で、`position` は `"top-left"`・`"top-right"`・`"bottom-left"` (既定)・`"bottom-right"`、`text` の `\n` は改行)・`fit?` (`"cover"` 既定は枠を満たすよう切る、`"contain"` は切らずに収め、影は媒体の縁に付く。キャプションの帯は見える媒体の矩形 (写真・動画とも、枠より小さければ拡大して収めた縁) に沿う) |
-| `ending(props)`        | ED。`title`・`subtitle`・`date`・`distance`・`ridingTime`・`routes`・`credits`                                                                                                                                                                                                                                                     |
-| `subtitleBand({})`     | 字幕下の暗がり (props は無いが引数は要る、通常は `narration()` が組むので直接は使わない)                                                                                                                                                                                                                                           |
+| `ending(props)`        | ED。`title`・`subtitle`・`date`・`distance`・`ridingTime`・`routes`・`credits`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `subtitleBand({})`     | 字幕下の暗がり (props は無いが引数は要る、通常は `narration()` が組むので直接は使わない)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
 立ち絵の `figure()` は要素ファクトリではなく `line()`・`narration()` と同じ `@ansanloms/motovlog/compositions` に置く (「立ち絵」参照。`narration()` が括りから作る立ち絵の item は effects の `sample()` を使うため)。サムネ・OP の絵の `thumbnail(props)` も同じ入口に置く (`photo`・`badge`・`title` (文字列、または改行として結合される文字列の配列)・`by` (`character()` の戻り値、表情は `expressions` の最初のキー、か `{ character, expression? }` の形で表情を明示する) を受け、`character()` の表情名の解決 (`figureLayers()`) を伴うため、ADR-0011 の禁止事項により components 単体では書けない)。
 

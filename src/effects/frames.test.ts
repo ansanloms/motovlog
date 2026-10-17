@@ -5,6 +5,7 @@ import {
   fadeGain,
   fadeOpacity,
   frameEffectsOpacity,
+  panTransform,
   toFrame,
   toFrameSpan,
   transitionFrames,
@@ -360,5 +361,79 @@ describe("transitionFrames", () => {
 
   it("丸めで 1 フレームになる", () => {
     expect(transitionFrames({ at: 0, duration: 0.5 / 30, fps: 30 })).toBe(1);
+  });
+});
+
+describe("panTransform", () => {
+  const from = { x: 100, y: 0, scale: 1.5 };
+  const to = { x: 0, y: 100, scale: 2 };
+
+  it("frame 0 は from そのもの", () => {
+    const t = panTransform({ frame: 0, durationInFrames: 11, from, to });
+
+    expect(t.scale).toBe(1.5);
+    expect(t.translateX).toBeCloseTo(0.5 * (50 - 100));
+    expect(t.translateY).toBeCloseTo(0.5 * (50 - 0));
+  });
+
+  it("最後のフレームは to そのもの", () => {
+    const t = panTransform({ frame: 10, durationInFrames: 11, from, to });
+
+    expect(t.scale).toBe(2);
+    expect(t.translateX).toBeCloseTo(1 * (50 - 0));
+    expect(t.translateY).toBeCloseTo(1 * (50 - 100));
+  });
+
+  it("中間は線形に補間する", () => {
+    const t = panTransform({ frame: 5, durationInFrames: 11, from, to });
+
+    // x = 50, y = 50, scale = 1.75
+    expect(t.scale).toBeCloseTo(1.75);
+    expect(t.translateX).toBeCloseTo(0);
+    expect(t.translateY).toBeCloseTo(0);
+  });
+
+  it("scale が 1 なら x/y に関わらず translate は 0", () => {
+    const t = panTransform({
+      frame: 3,
+      durationInFrames: 11,
+      from: { x: 0, y: 0, scale: 1 },
+      to: { x: 100, y: 100, scale: 1 },
+    });
+
+    expect(t.translateX).toBeCloseTo(0);
+    expect(t.translateY).toBeCloseTo(0);
+  });
+
+  it("x = 0 は +(s-1)*50、x = 100 は -(s-1)*50", () => {
+    const left = panTransform({
+      frame: 0,
+      durationInFrames: 2,
+      from: { x: 0, y: 50, scale: 1.2 },
+      to: { x: 0, y: 50, scale: 1.2 },
+    });
+    const right = panTransform({
+      frame: 0,
+      durationInFrames: 2,
+      from: { x: 100, y: 50, scale: 1.2 },
+      to: { x: 100, y: 50, scale: 1.2 },
+    });
+
+    expect(left.translateX).toBeCloseTo(0.2 * 50);
+    expect(right.translateX).toBeCloseTo(-0.2 * 50);
+  });
+
+  it("durationInFrames が 1 以下なら from", () => {
+    const t = panTransform({ frame: 0, durationInFrames: 1, from, to });
+
+    expect(t.scale).toBe(1.5);
+  });
+
+  it("範囲外の frame は 0〜1 に丸める", () => {
+    const before = panTransform({ frame: -5, durationInFrames: 11, from, to });
+    const after = panTransform({ frame: 99, durationInFrames: 11, from, to });
+
+    expect(before.scale).toBe(1.5);
+    expect(after.scale).toBe(2);
   });
 });

@@ -63,10 +63,12 @@ import type {
   GroupNode,
   Item,
   Layer,
+  PanNode,
   PendingCutItem,
   ResolvedItem,
   SampleNode,
 } from "../effects/index.ts";
+import { LINE_MARKER_NAME } from "../effects/pan.ts";
 import { resolveProjectSlug } from "../project/load.ts";
 import {
   bandTiming,
@@ -131,6 +133,11 @@ const LineMarker: React.FC<NormalizedLineProps> = () => {
     "line() は narration() に渡す item の node としてのみ使えます (narration() の外に置かれています)。",
   );
 };
+
+// pan() が line() の戻り値を弾くための印 (effects から compositions を
+// import すると循環するため、displayName で照合する)。値は pan.ts の
+// LINE_MARKER_NAME と揃える。
+LineMarker.displayName = LINE_MARKER_NAME;
 
 /**
  * 発話 1 本の台本を書く。text (VOICEVOX の {漢字|よみ} 記法を含んでよい、
@@ -200,7 +207,7 @@ export const line = (props: LineProps): ReactNode => {
 };
 
 const linePropsOf = (
-  node: ReactNode | FrameMarker | SampleNode,
+  node: ReactNode | FrameMarker | SampleNode | PanNode,
 ): NormalizedLineProps | undefined =>
   React.isValidElement(node) && node.type === LineMarker
     ? (node.props as NormalizedLineProps)

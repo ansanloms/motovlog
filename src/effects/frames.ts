@@ -194,3 +194,44 @@ export const frameEffectsOpacity = (params: {
     outFrames: toFrame(active.out, fps),
   });
 };
+
+/**
+ * pan() の、frame 時点の transform (translate は要素の箱に対する %)。
+ * 進行度は frame 0 で 0、最後のフレームで 1 になる線形 (尺が 1 フレーム
+ * 以下なら 0 = from)。範囲外の frame は 0〜1 に丸める。x/y は CSS の
+ * object-position と同じ意味 (0 = 左 (上) 端を揃える、100 = 右 (下) 端を
+ * 揃える) で、translate = (scale - 1) × (50 - x)。scale を先に掛けてから
+ * translate する前提 (translate の % は拡大前の箱が基準)。
+ *
+ * interpolate() を使わない理由: fadeOpacity と同じく、純粋関数にして
+ * vitest で直接叩けるようにするため。
+ */
+export const panTransform = (params: {
+  /** 区間先頭からのフレーム番号 (0 起点)。 */
+  frame: number;
+  /** 区間の尺 (フレーム数)。 */
+  durationInFrames: number;
+  /** 始点。 */
+  from: { x: number; y: number; scale: number };
+  /** 終点。 */
+  to: { x: number; y: number; scale: number };
+}): { translateX: number; translateY: number; scale: number } => {
+  const { frame, durationInFrames, from, to } = params;
+
+  const progress =
+    durationInFrames <= 1
+      ? 0
+      : Math.min(1, Math.max(0, frame / (durationInFrames - 1)));
+
+  const lerp = (a: number, b: number) => a + (b - a) * progress;
+
+  const x = lerp(from.x, to.x);
+  const y = lerp(from.y, to.y);
+  const scale = lerp(from.scale, to.scale);
+
+  return {
+    translateX: (scale - 1) * (50 - x),
+    translateY: (scale - 1) * (50 - y),
+    scale,
+  };
+};
