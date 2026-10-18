@@ -2,13 +2,12 @@ import { describe, expect, it, vi } from "vitest";
 import { getSetup } from "./setup.ts";
 import type { Setup } from "./setup.ts";
 import { PALETTE_KEYS } from "./theme/tokens.ts";
-import { VOICE_KEYS } from "./voice/cache.ts";
 
 describe("getSetup", () => {
   it("configure() 済みなら利用側の値を返す", () => {
     // test/setup.ts が configure() している。
     expect(getSetup().defaultProject).toBe("00000000-sample");
-    expect(typeof getSetup().theme.narrator.speaker).toBe("number");
+    expect(typeof getSetup().theme.palette.bg).toBe("string");
   });
 
   it("configure() 前に呼ぶと configure() を書く場所を示して throw する", async () => {
@@ -24,18 +23,13 @@ describe("getSetup", () => {
 describe("configure", () => {
   /** 全項目の揃った theme。壊す項目だけを上書きして使う。 */
   const validTheme = () => {
-    const narrator: Record<string, number> = {};
     const palette: Record<string, string> = {};
-
-    for (const key of VOICE_KEYS) {
-      narrator[key] = 1;
-    }
 
     for (const key of PALETTE_KEYS) {
       palette[key] = "#0f1a14";
     }
 
-    return { narrator, palette };
+    return { palette };
   };
 
   /**
@@ -58,18 +52,6 @@ describe("configure", () => {
 
     return import("./setup.ts");
   };
-
-  it("narrator の項目が数値でなければ、その項目名を挙げて throw する", async () => {
-    const { configure } = await freshSetup();
-    const theme = validTheme();
-
-    delete theme.narrator.pitch;
-    theme.narrator.volume = Number.NaN;
-
-    expect(() => configure(setupWith(theme))).toThrow(
-      "configure(): theme.narrator の項目が数値ではありません: pitch・volume",
-    );
-  });
 
   it("palette の項目が欠けていれば、その項目名を挙げて throw する", async () => {
     const { configure } = await freshSetup();

@@ -16,10 +16,17 @@ import {
 import type { CutItem, FadeItem, SampleNode } from "../effects/index.ts";
 import { bandTiming, characterTiming, subtitleTiming } from "../theme/index.ts";
 import type { LipsyncEntry, VoiceCache, VoiceOptions } from "../voice/cache.ts";
-import { linePath, resolveVoice, voiceKey } from "../voice/key.ts";
+import { linePath, mergeVoice, voiceKey } from "../voice/key.ts";
+import { testVoice } from "../../test/voice.ts";
 import { character } from "./character.ts";
 import { figure } from "./figure.ts";
 import { line, narration } from "./narration.ts";
+
+/** by を問わないテストが line() に渡す既定のキャラクター (声質は testVoice)。 */
+const defaultBy = character({
+  voice: testVoice,
+  expressions: { normal: ["a.png"] },
+});
 
 /** isVoiceCache を通る偽のキャッシュ本体を組む。duration 以外は固定値 (voice・lipsync は overrides で差し替え可)。 */
 const fakeCache = (
@@ -27,7 +34,7 @@ const fakeCache = (
   overrides: { voice?: VoiceOptions; lipsync?: LipsyncEntry[] } = {},
 ): VoiceCache => ({
   text: "dummy",
-  voice: resolveVoice(overrides.voice),
+  voice: mergeVoice(testVoice, overrides.voice),
   reading: "dummy",
   duration,
   lipsync: overrides.lipsync ?? [],
@@ -49,7 +56,10 @@ const fetchCacheFor = async (
     Object.entries(durationsByText).map(async ([text, spec]) => {
       const { duration, voice, lipsync } =
         typeof spec === "number" ? { duration: spec } : spec;
-      const key = await voiceKey({ text, voice });
+      const key = await voiceKey({
+        text,
+        voice: mergeVoice(testVoice, voice),
+      });
 
       return [key, fakeCache(duration, { voice, lipsync })] as const;
     }),
@@ -75,8 +85,8 @@ describe("narration", () => {
       layers: [, speechLayer],
     } = await narration(
       [
-        cut(line({ text: "A" }), { at: 10 }),
-        cut(line({ text: "B" }), { after: 0.5 }),
+        cut(line({ by: defaultBy, text: "A" }), { at: 10 }),
+        cut(line({ by: defaultBy, text: "B" }), { after: 0.5 }),
       ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
@@ -99,7 +109,7 @@ describe("narration", () => {
 
     const explicit: CutItem = {
       kind: "cut",
-      node: line({ text: "A" }),
+      node: line({ by: defaultBy, text: "A" }),
       at: 10,
       duration: 999,
     };
@@ -123,7 +133,7 @@ describe("narration", () => {
 
     const explicit: CutItem = {
       kind: "cut",
-      node: line({ text: "A" }),
+      node: line({ by: defaultBy, text: "A" }),
       at: 10,
       duration: 999,
     };
@@ -159,7 +169,7 @@ describe("narration", () => {
 
     await expect(
       narration(
-        [cut(line({ text: "A" }), { at: start(other) })],
+        [cut(line({ by: defaultBy, text: "A" }), { at: start(other) })],
         { slug: "sample" },
         { isStudio: () => false },
       ),
@@ -181,7 +191,7 @@ describe("narration", () => {
   it("item の until を指定すると throw する (narration() は発話の実尺から duration を求めるため使えない)", async () => {
     await expect(
       narration(
-        [cut(line({ text: "A" }), { at: 0, until: 5 })],
+        [cut(line({ by: defaultBy, text: "A" }), { at: 0, until: 5 })],
         { slug: "sample" },
         { isStudio: () => false },
       ),
@@ -189,7 +199,9 @@ describe("narration", () => {
   });
 
   it("item の node に塊 (group) を渡すと throw する", async () => {
-    const g = group([[cut(line({ text: "A" }), { at: 0, duration: 1 })]]);
+    const g = group([
+      [cut(line({ by: defaultBy, text: "A" }), { at: 0, duration: 1 })],
+    ]);
 
     await expect(
       narration(
@@ -202,7 +214,7 @@ describe("narration", () => {
 
   it("発話 layer の line() item は source として渡した入力 item 自体を持つ", async () => {
     const fetchCache = await fetchCacheFor({ A: 1 });
-    const input = cut(line({ text: "A" }), { at: 0 });
+    const input = cut(line({ by: defaultBy, text: "A" }), { at: 0 });
 
     const {
       layers: [, speechLayer],
@@ -218,7 +230,7 @@ describe("narration", () => {
   it("声無しの line() item も source として渡した入力 item 自体を持つ", async () => {
     const input: CutItem = {
       kind: "cut",
-      node: line({ text: "A", voice: null }),
+      node: line({ by: defaultBy, text: "A", voice: null }),
       at: 0,
       duration: 1,
     };
@@ -247,7 +259,7 @@ describe("narration", () => {
 
   it("narration() に渡した入力 item を start()/end() で他の layer から参照できる", async () => {
     const fetchCache = await fetchCacheFor({ A: 1 });
-    const first = cut(line({ text: "A" }), { at: 0 });
+    const first = cut(line({ by: defaultBy, text: "A" }), { at: 0 });
 
     const n = await narration(
       [first],
@@ -273,8 +285,8 @@ describe("narration", () => {
     await expect(
       narration(
         [
-          cut(line({ text: "A" }), { at: 5 }),
-          cut(line({ text: "B" }), { at: 0 }),
+          cut(line({ by: defaultBy, text: "A" }), { at: 5 }),
+          cut(line({ by: defaultBy, text: "B" }), { at: 0 }),
         ],
         { slug: "sample" },
         { fetchCache, isStudio: () => false },
@@ -354,8 +366,8 @@ describe("narration", () => {
       layers: [bandLayer],
     } = await narration(
       [
-        cut(line({ text: "P" }), { at: 1 }),
-        cut(line({ text: "Q" }), { at: 7 }),
+        cut(line({ by: defaultBy, text: "P" }), { at: 1 }),
+        cut(line({ by: defaultBy, text: "Q" }), { at: 7 }),
       ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
@@ -379,8 +391,8 @@ describe("narration", () => {
       layers: [bandLayer],
     } = await narration(
       [
-        cut(line({ text: "P" }), { at: 1 }),
-        cut(line({ text: "Q" }), { at: 8 }),
+        cut(line({ by: defaultBy, text: "P" }), { at: 1 }),
+        cut(line({ by: defaultBy, text: "Q" }), { at: 8 }),
       ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
@@ -416,7 +428,7 @@ describe("narration", () => {
     const {
       layers: [, speechLayer],
     } = await narration(
-      [cut(line({ text: "R" }), { at: 0 })],
+      [cut(line({ by: defaultBy, text: "R" }), { at: 0 })],
       { slug: "sample" },
       { fetchCache, isStudio: () => true, sleep },
     );
@@ -436,14 +448,14 @@ describe("narration", () => {
       return new Response("not found", { status: 404 });
     }) as typeof fetch;
 
-    const key = await voiceKey({ text: "S" });
+    const key = await voiceKey({ voice: testVoice, text: "S" });
     const expectedUrl = staticFile(`${linePath("sample", key)}.json`);
 
     let error: unknown;
 
     try {
       await narration(
-        [cut(line({ text: "S" }), { at: 0 })],
+        [cut(line({ by: defaultBy, text: "S" }), { at: 0 })],
         { slug: "sample" },
         { fetchCache, isStudio: () => false },
       );
@@ -468,7 +480,7 @@ describe("narration", () => {
 
     await expect(
       narration(
-        [cut(line({ text: "U" }), { at: 0 })],
+        [cut(line({ by: defaultBy, text: "U" }), { at: 0 })],
         { slug: "sample" },
         {
           fetchCache,
@@ -489,7 +501,7 @@ describe("narration", () => {
     const {
       layers: [, speechLayer],
     } = await narration(
-      [cut(line({ text: "T" }), { at: 0 })],
+      [cut(line({ by: defaultBy, text: "T" }), { at: 0 })],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
     );
@@ -516,7 +528,7 @@ describe("narration", () => {
     const {
       layers: [, speechLayer],
     } = await narration(
-      [cut(line({ text: ["a", "b"] }), { at: 0 })],
+      [cut(line({ by: defaultBy, text: ["a", "b"] }), { at: 0 })],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
     );
@@ -533,7 +545,11 @@ describe("narration", () => {
   });
 
   it("line() の reading を配列で書くと改行で結合した文字列と同じ key の音声キャッシュを読む", async () => {
-    const key = await voiceKey({ text: "T2", reading: "a\nb" });
+    const key = await voiceKey({
+      voice: testVoice,
+      text: "T2",
+      reading: "a\nb",
+    });
     const fetchCache = (async (input: RequestInfo | URL) => {
       const url = String(input);
 
@@ -545,7 +561,11 @@ describe("narration", () => {
     }) as typeof fetch;
 
     const { speech } = await narration(
-      [cut(line({ text: "T2", reading: ["a", "b"] }), { at: 0 })],
+      [
+        cut(line({ by: defaultBy, text: "T2", reading: ["a", "b"] }), {
+          at: 0,
+        }),
+      ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
     );
@@ -561,13 +581,13 @@ describe("narration", () => {
 
     const explicitB: CutItem = {
       kind: "cut",
-      node: line({ text: "B" }),
+      node: line({ by: defaultBy, text: "B" }),
       at: 10,
       duration: 999,
     };
 
     const { speech } = await narration(
-      [cut(line({ text: "A" }), { at: 0 }), explicitB],
+      [cut(line({ by: defaultBy, text: "A" }), { at: 0 }), explicitB],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
     );
@@ -588,13 +608,16 @@ describe("narration", () => {
 
   it("lines は line() item ごとに、渡した順で入力 item 自体を持つ", async () => {
     const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
-    const c = character({ expressions: { normal: ["a.png"] } });
+    const c = character({
+      voice: testVoice,
+      expressions: { normal: ["a.png"] },
+    });
 
     const itemA = cut(line({ text: "A", by: c }), {
       at: characterTiming.lead,
     });
-    const itemB = cut(line({ text: "B" }), { after: 0 });
-    const itemC = cut(line({ text: "C", voice: null }), {
+    const itemB = cut(line({ by: defaultBy, text: "B" }), { after: 0 });
+    const itemC = cut(line({ by: defaultBy, text: "C", voice: null }), {
       after: 0,
       duration: 1,
     });
@@ -617,7 +640,7 @@ describe("narration", () => {
 
     const n = await narration(
       [
-        cut(line({ text: "A" }), { at: 0 }),
+        cut(line({ by: defaultBy, text: "A" }), { at: 0 }),
         cut(annotation({ text: "x" }), { after: 0, duration: 1 }),
       ],
       { slug: "sample" },
@@ -632,8 +655,8 @@ describe("narration", () => {
 
     const n = await narration(
       [
-        cut(line({ text: "A" }), { at: 0 }),
-        cut(line({ text: "B" }), { after: 0 }),
+        cut(line({ by: defaultBy, text: "A" }), { at: 0 }),
+        cut(line({ by: defaultBy, text: "B" }), { after: 0 }),
       ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
@@ -652,7 +675,7 @@ describe("narration", () => {
 
     const explicit: CutItem = {
       kind: "cut",
-      node: line({ text: "A" }),
+      node: line({ by: defaultBy, text: "A" }),
       at: 0,
       duration: 1.2,
     };
@@ -669,13 +692,13 @@ describe("narration", () => {
     expect(speech[0].duration).toBe(1.2);
   });
 
-  it("speech[i].by・expression は line() で指定した値をそのまま持ち、未指定なら undefined", async () => {
+  it("speech[i].by・expression は line() で指定した値をそのまま持ち、expression 未指定なら undefined", async () => {
     const c = character({
-      voice: { speaker: 13 },
+      voice: testVoice,
       expressions: { normal: ["a.png"], smile: ["b.png"] },
     });
     const fetchCache = await fetchCacheFor({
-      A: { duration: 1, voice: c.voice },
+      A: { duration: 1 },
       B: 1,
     });
 
@@ -684,7 +707,7 @@ describe("narration", () => {
         cut(line({ text: "A", by: { character: c, expression: "smile" } }), {
           at: 0,
         }),
-        cut(line({ text: "B" }), { after: 0 }),
+        cut(line({ by: defaultBy, text: "B" }), { after: 0 }),
       ],
       { slug: "sample" },
       { fetchCache, isStudio: () => false },
@@ -692,19 +715,19 @@ describe("narration", () => {
 
     expect(speech[0].by).toBe(c);
     expect(speech[0].expression).toBe("smile");
-    expect(speech[1].by).toBeUndefined();
+    expect(speech[1].by).toBe(defaultBy);
     expect(speech[1].expression).toBeUndefined();
   });
 
-  it("line() の声質は theme の narrator ← by.voice ← line() の voice の順で上書きした値が音声キャッシュの key に使われる", async () => {
+  it("line() の声質は by.voice ← line() の voice の順で上書きした値が音声キャッシュの key に使われる", async () => {
     const c = character({
-      voice: { speaker: 13, speed: 0.8 },
+      voice: { ...testVoice, speed: 0.8 },
       expressions: { normal: ["a.png"] },
     });
 
-    // by.voice だけを使った実効値 { speaker: 13, speed: 0.8 } のキーにだけ応答する。
+    // by.voice だけを使った実効値 (speed: 0.8) のキーにだけ応答する。
     const fetchCacheBaseOnly = await fetchCacheFor({
-      A: { duration: 1, voice: { speaker: 13, speed: 0.8 } },
+      A: { duration: 1, voice: { speed: 0.8 } },
     });
 
     const { speech: baseSpeech } = await narration(
@@ -716,7 +739,7 @@ describe("narration", () => {
     expect(baseSpeech[0].duration).toBe(1);
 
     // line() の voice で speed を上書きすると、by.voice だけの実効値のキーでは
-    // ヒットしなくなる (by.voice や既定値だけで key を作っていないことの確認)。
+    // ヒットしなくなる (by.voice だけで key を作っていないことの確認)。
     await expect(
       narration(
         [cut(line({ text: "A", by: c, voice: { speed: 1.2 } }), { at: 0 })],
@@ -725,9 +748,9 @@ describe("narration", () => {
       ),
     ).rejects.toThrow(/発話の音声キャッシュが見つかりません/);
 
-    // 上書き後の実効値 { speaker: 13, speed: 1.2 } のキーにだけ応答する。
+    // 上書き後の実効値 (speed: 1.2) のキーにだけ応答する。
     const fetchCacheOverride = await fetchCacheFor({
-      A: { duration: 2, voice: { speaker: 13, speed: 1.2 } },
+      A: { duration: 2, voice: { speed: 1.2 } },
     });
 
     const { speech: overrideSpeech } = await narration(
@@ -749,9 +772,9 @@ describe("narration", () => {
   });
 
   it("line() は voice: null と reading を同時に指定すると即 throw する", () => {
-    expect(() => line({ text: "A", voice: null, reading: "エー" })).toThrow(
-      /声無しの行 \(voice: null\) に reading は書けません/,
-    );
+    expect(() =>
+      line({ by: defaultBy, text: "A", voice: null, reading: "エー" }),
+    ).toThrow(/声無しの行 \(voice: null\) に reading は書けません/);
   });
 
   it("line() 直下に expression を渡すと即 throw する (by の中に書けというメッセージ、JS からの誤用対策)", () => {
@@ -763,7 +786,10 @@ describe("narration", () => {
   });
 
   it("line() は by.expressions に無い expression を指定すると即 throw する", () => {
-    const c = character({ expressions: { normal: ["a.png"] } });
+    const c = character({
+      voice: testVoice,
+      expressions: { normal: ["a.png"] },
+    });
 
     expect(() =>
       line({ text: "A", by: { character: c, expression: "nope" } }),
@@ -771,7 +797,10 @@ describe("narration", () => {
   });
 
   it("line() は by.expressions の prototype のキー (toString 等) を指定すると即 throw する (#11)", () => {
-    const c = character({ expressions: { normal: ["a.png"] } });
+    const c = character({
+      voice: testVoice,
+      expressions: { normal: ["a.png"] },
+    });
 
     expect(() =>
       line({ text: "A", by: { character: c, expression: "toString" } }),
@@ -792,7 +821,7 @@ describe("narration", () => {
 
     const { speech } = await narration(
       [
-        cut(line({ text: "A" }), { at: 0 }),
+        cut(line({ by: defaultBy, text: "A" }), { at: 0 }),
         cut(annotation({ text: "x" }), { after: 0, duration: 1 }),
       ],
       { slug: "sample" },
@@ -806,10 +835,13 @@ describe("narration", () => {
   describe("figure() の括り (ADR-0014)", () => {
     it("戻り値は塊 (kind: group) で、figure() の括りが無ければ 2 layers、あれば 3 layers", async () => {
       const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       const noFigure = await narration(
-        [cut(line({ text: "A" }), { at: 0 })],
+        [cut(line({ by: defaultBy, text: "A" }), { at: 0 })],
         { slug: "sample" },
         { fetchCache, isStudio: () => false },
       );
@@ -833,7 +865,10 @@ describe("narration", () => {
 
     it("立ち絵 item の範囲は既定の lead/tail (「最初の行の開始 − lead」〜「最後の行の字幕の終端 + tail」) になる", async () => {
       const fetchCache = await fetchCacheFor({ A: 2 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       const n = await narration(
         [
@@ -859,7 +894,10 @@ describe("narration", () => {
 
     it("figure() の lead/tail を明示すると立ち絵 item の範囲がそれに従う", async () => {
       const fetchCache = await fetchCacheFor({ A: 2 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
       const lead = 0.5;
       const tail = 0.3;
 
@@ -886,7 +924,10 @@ describe("narration", () => {
 
     it("in/out を指定すると fade()、無ければ cut() で立ち絵 layer に置く", async () => {
       const fetchCache = await fetchCacheFor({ A: 2, B: 2 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       const withoutFade = await narration(
         [
@@ -921,6 +962,7 @@ describe("narration", () => {
     it("expression・side は立ち絵の SampleNode にそのまま渡る", async () => {
       const fetchCache = await fetchCacheFor({ A: 1 });
       const c = character({
+        voice: testVoice,
         expressions: { normal: ["a.png"], smile: ["b.png"] },
       });
 
@@ -954,7 +996,10 @@ describe("narration", () => {
 
     it("括りの開始 (最初の行の開始 − lead) が塊の先頭より前なら throw する", async () => {
       const fetchCache = await fetchCacheFor({ A: 1 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       await expect(
         narration(
@@ -969,7 +1014,10 @@ describe("narration", () => {
 
     it("括り同士が重なると throw する", async () => {
       const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       await expect(
         narration(
@@ -995,14 +1043,17 @@ describe("narration", () => {
 
     it("括りの中の item は配列の順のまま平らにして解決し、括りの後ろの item も speech も平らに書いた場合と同じ結果になる", async () => {
       const fetchCache = await fetchCacheFor({ A: 1, B: 1 });
-      const c = character({ expressions: { normal: ["a.png"] } });
+      const c = character({
+        voice: testVoice,
+        expressions: { normal: ["a.png"] },
+      });
 
       const grouped = await narration(
         [
           figure(c, {}, [
             cut(line({ text: "A", by: c }), { at: characterTiming.lead }),
           ]),
-          cut(line({ text: "B" }), { after: 0.5 }),
+          cut(line({ by: defaultBy, text: "B" }), { after: 0.5 }),
         ],
         { slug: "sample" },
         { fetchCache, isStudio: () => false },
@@ -1011,7 +1062,7 @@ describe("narration", () => {
       const flat = await narration(
         [
           cut(line({ text: "A", by: c }), { at: characterTiming.lead }),
-          cut(line({ text: "B" }), { after: 0.5 }),
+          cut(line({ by: defaultBy, text: "B" }), { after: 0.5 }),
         ],
         { slug: "sample" },
         { fetchCache, isStudio: () => false },
@@ -1036,7 +1087,7 @@ describe("narration", () => {
 
     it("narration() は塊として cut(n, { at }) で置け、内部 item は塊の位置 + 相対秒で解決され、start(lineItem) は塊の外からも参照できる", async () => {
       const fetchCache = await fetchCacheFor({ A: 1 });
-      const first = cut(line({ text: "A" }), { at: 0 });
+      const first = cut(line({ by: defaultBy, text: "A" }), { at: 0 });
 
       const n = await narration(
         [first],
@@ -1065,6 +1116,8 @@ describe("narration", () => {
 
 describe("line() と pan()", () => {
   it("pan() は line() を実行時に throw する (型では弾けない)", () => {
-    expect(() => pan(line({ text: "こんにちは" }))).toThrow(/line\(\)/);
+    expect(() => pan(line({ by: defaultBy, text: "こんにちは" }))).toThrow(
+      /line\(\)/,
+    );
   });
 });

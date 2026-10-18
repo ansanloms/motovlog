@@ -17,7 +17,8 @@
 // する (remotion・CSS・src/components を import しない。watcher
 // (scripts/voice/extract.ts) が line().by から voice だけを読むため)。
 
-import type { VoiceOptions } from "../voice/cache.ts";
+import { missingVoiceKeys } from "../voice/cache.ts";
+import type { Voice } from "../voice/cache.ts";
 
 /** 口の形の識別子 (母音 5 種 + 無音)。 */
 export type MouthKey = "a" | "i" | "u" | "e" | "o" | "n";
@@ -36,10 +37,10 @@ export type FigureLayer = string | EyesLayer | MouthLayer;
 /** 表情名から画像レイヤーの列 (下から上の順) への対応。 */
 export type Expressions = Readonly<Record<string, readonly FigureLayer[]>>;
 
-/** character() が受ける定義・返す値。voice は line() の by から実効の声質を求めるのに使う既定値。 */
+/** character() が受ける定義・返す値。voice は line() の by から実効の声質を求めるのに使う声質。 */
 export type Character = {
-  /** line() の by から実効の声質を求めるのに使う既定値。省略時は theme の既定話者のみを使う。 */
-  readonly voice?: VoiceOptions;
+  /** このキャラクターの声質。全項目必須で、line() 自身の voice がこれを差分で上書きする (ADR-0022)。 */
+  readonly voice: Voice;
   /** 表情名から画像レイヤーの列への対応。1 つ以上必要。 */
   readonly expressions: Expressions;
 };
@@ -62,10 +63,20 @@ export const isMouthLayer = (layer: FigureLayer): layer is MouthLayer =>
 /**
  * キャラクターを定義する。戻り値をそのまま (同じオブジェクトの参照として)
  * line() の by・figure() の第 1 引数に渡すこと (identity が結び付けの唯一の
- * 手段、ADR-0011)。expressions が空、またはいずれかの表情のレイヤー列が空なら
- * throw する。
+ * 手段、ADR-0011)。expressions が空、いずれかの表情のレイヤー列が空、または
+ * voice の項目が 1 つでも有限数でなければ throw する。
  */
 export const character = (definition: Character): Character => {
+  // 利用側の characters/*.ts は型の付かない値が来ることがある (watcher が
+  // 動的 import() で読む)。missingVoiceKeys() は unknown を受ける。
+  const badVoices = missingVoiceKeys(definition.voice);
+
+  if (badVoices.length > 0) {
+    throw new Error(
+      `character(): voice の項目が数値ではありません: ${badVoices.join("・")}`,
+    );
+  }
+
   const names = Object.keys(definition.expressions);
 
   if (names.length === 0) {

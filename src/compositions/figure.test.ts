@@ -1,6 +1,7 @@
 import { isValidElement } from "react";
 import { staticFile } from "remotion";
 import { describe, expect, it } from "vitest";
+import { testVoice } from "../../test/voice.ts";
 import { character } from "./character.ts";
 import type { Character } from "./character.ts";
 import { Figure } from "../../modules/figure/index.ts";
@@ -46,7 +47,7 @@ const mouth = {
 };
 
 const hero: Character = character({
-  voice: { speaker: 13 },
+  voice: testVoice,
   expressions: {
     normal: ["body.png", mouth],
     sweat: ["body.png", "fx-sweat.png"],
@@ -54,6 +55,7 @@ const hero: Character = character({
 });
 
 const other: Character = character({
+  voice: testVoice,
   expressions: { normal: ["other-body.png"] },
 });
 
@@ -575,6 +577,7 @@ describe("figureLayers", () => {
   };
 
   const mixed: Character = character({
+    voice: testVoice,
     expressions: {
       normal: ["body.png", eyes, mouth],
       sweat: ["body.png", "fx-sweat.png"],

@@ -21,8 +21,8 @@
 // と同名になり、この timeline をコピーした先で両方を import すると識別子が
 // 衝突するため。
 //
-// voice はこのキャラクターの既定の声質で、line() 自身の voice がこれを
-// 上書きする (src/voice/key.ts の mergeVoice())。
+// voice はこのキャラクターの声質 (8 項目すべて必須) で、line() 自身の voice が
+// 差分としてこれを上書きする (src/voice/key.ts の mergeVoice())。
 //
 // このファイルは Node からそのまま import できる純粋な値のモジュールに
 // 保つこと (remotion・CSS・src/components は import しない。
@@ -30,7 +30,6 @@
 // 読むため)。
 
 import { character } from "../src/compositions/character.ts";
-import { narrator } from "../theme/index.ts";
 
 const dir = "common/characters/sample";
 const part = (name: string) => `${dir}/${name}.svg`;
@@ -59,7 +58,56 @@ const brows = {
 };
 
 export const sampleCharacter = character({
-  voice: narrator,
+  /**
+   * 声質。VOICEVOX 青山龍星 (T&M)。speed・pitch・intonation・volume・pause は
+   * 倍率 (pitch のみオフセットで 0 が中立、他は 1 が中立)、silenceBefore・
+   * silenceAfter は秒。値は ENGINE の初期値 (speed 1、pitch 0、intonation 1、
+   * volume 1、前後無音 0.1) から T&M の語りに合わせて調整したもの
+   * (2026-09-09)。
+   */
+  voice: {
+    /**
+     * VOICEVOX のスタイル ID。
+     * 85: 青山龍星(かなしみ)
+     */
+    speaker: 85,
+
+    /**
+     * 話速 (speedScale)。倍率、1 が中立。
+     */
+    speed: 1,
+
+    /**
+     * 音高 (pitchScale)。
+     * オフセット、0 が中立。
+     */
+    pitch: -0.1,
+
+    /**
+     * 抑揚 (intonationScale)。倍率、1 が中立。
+     */
+    intonation: 1.5,
+
+    /**
+     * 音量 (volumeScale)。倍率、1 が中立。
+     */
+    volume: 1.5,
+
+    /**
+     * 句読点の間 (pauseLengthScale)。倍率、1 が中立。
+     */
+    pause: 0.5,
+
+    /**
+     * 開始無音 (prePhonemeLength)。秒。
+     */
+    silenceBefore: 0,
+
+    /**
+     * 終了無音 (postPhonemeLength)。秒。
+     */
+    silenceAfter: 0,
+  },
   expressions: {
     normal: [body, mouth, eyes, brows.normal],
     sweat: [body, mouth, eyes, brows.troubled],

@@ -9,20 +9,16 @@
 
 import { PALETTE_KEYS } from "./theme/tokens.ts";
 import type { Palette } from "./theme/tokens.ts";
-import type { Narrator } from "./theme/voice.ts";
-import { VOICE_KEYS } from "./voice/cache.ts";
 
-/** 利用側が持つ見た目と声の値。 */
+/** 利用側が持つ見た目の値。 */
 export type Theme = {
   /** T&M「カラー」節のパレット。 */
   readonly palette: Palette;
-  /** 既定の話者と声質 (ADR-0010)。 */
-  readonly narrator: Narrator;
 };
 
 /** configure() に渡すもの。 */
 export type Setup = {
-  /** 利用側が持つ見た目と声の値。 */
+  /** 利用側が持つ見た目の値。 */
   readonly theme: Theme;
   /**
    * projects/<slug>/timeline.ts を読む関数。バンドラが静的解析できる形の
@@ -40,27 +36,16 @@ let current: Setup | undefined;
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 /**
- * theme の値が揃っているかを見る。揃っていないまま通すと、どちらもエラー無しで
- * 間違った成果物になるため、入口で止める。
+ * theme の値が揃っているかを見る。揃っていないまま通すと、エラー無しで間違った
+ * 成果物になるため、入口で止める。
  *
- * - narrator: 欠けた項目は resolveVoice() (src/voice/key.ts) が undefined を
- *   埋め、VOICEVOX ENGINE が黙って既定値で合成する。
  * - palette: 欠けた項目は themeCssVars() が `undefined` の CSS 変数として流し、
  *   その色を使う箇所だけが初期値で描かれる。
  */
 const assertTheme = (theme: Theme): void => {
   // 利用側の app/config.ts は watcher (scripts/voice.ts) が動的 import() で
   // 読むため、型の付かない値が来ることがある。unknown として見る。
-  const narrator: Record<string, unknown> = theme?.narrator ?? {};
   const palette: Record<string, unknown> = theme?.palette ?? {};
-
-  const badVoices = VOICE_KEYS.filter((key) => !Number.isFinite(narrator[key]));
-
-  if (badVoices.length > 0) {
-    throw new Error(
-      `configure(): theme.narrator の項目が数値ではありません: ${badVoices.join("・")}`,
-    );
-  }
 
   const missingColors = PALETTE_KEYS.filter(
     (key) => typeof palette[key] !== "string",

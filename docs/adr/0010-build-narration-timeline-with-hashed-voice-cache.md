@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-09-08T13:45:25Z
-refs: [2, 4, 6, 8, 9, 11, 12]
+refs: [2, 4, 6, 8, 9, 11, 12, 22]
 tags: [voicevox, narration, timeline]
 ---
 

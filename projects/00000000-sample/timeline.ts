@@ -49,7 +49,6 @@ import {
   timeline,
 } from "../../src/effects/index.ts";
 import { chapterDurationSec, chapterTiming } from "../../src/theme/index.ts";
-import { narrator } from "../../theme/index.ts";
 
 const asset = (path: string) => staticFile(`00000000-sample/assets/${path}`);
 
@@ -104,9 +103,9 @@ const clipB = cut(
   { duration: clipBSec },
 );
 
-// 発話 2 本目の声質の差分。theme の narrator (既定話者) を丸ごと変えず、
-// 差分だけをファイル内の const として持てる (ADR-0010)。
-const calm = { ...narrator, speed: 0.9 };
+// 発話 2 本目の声質の差分。by.voice を丸ごと変えず、差分だけをファイル内の
+// const として持てる (ADR-0010)。
+const calm = { speed: 0.9 };
 
 // 発話を先に解決する。narration() は塊 (GroupNode、ADR-0014) に speech を
 // 加えた値を返す。内部は下から立ち絵 layer・暗がり layer・発話 layer の順。
@@ -114,7 +113,7 @@ const calm = { ...narrator, speed: 0.9 };
 //
 // text は文字列リテラルで書くこと (watcher が timeline.ts を静的に読む。
 // 変数や関数呼び出しは使えない)。voice に書けるのはリテラル・spread・
-// 同じファイルの const・theme からの import に限る。voice の 8 値:
+// 同じファイルの const・import した値に限る。voice の 8 値:
 // speaker (VOICEVOX のスタイル id)、speed・intonation・volume・pause は
 // 倍率で 1 が中立、pitch はオフセットで 0 が中立、silenceBefore・
 // silenceAfter は秒。音声は projects/<slug>/assets/lines/<key>.{wav,json}
@@ -122,7 +121,7 @@ const calm = { ...narrator, speed: 0.9 };
 // 別の key になり再生成される。
 //
 // by はキャラクター (characters/sample.ts の character() の戻り値)。
-// 実効の声質は theme の narrator ← by.voice ← line() 自身の voice の順で
+// by は必須。実効の声質は by.voice ← line() 自身の voice の順で
 // 上書きした値になる (watcher と narration() の両方が同じ関数
 // (mergeVoice()) で合成するため、生成される音声キャッシュの key は一致する)。
 //
@@ -131,10 +130,10 @@ const calm = { ...narrator, speed: 0.9 };
 // (点滅を避けるため、間の 0.2 秒も出さない)、ED が始まる直前 (clipB の終端 −
 // endingSec) で消す (T&M「画面配置」) 位置に合わせて計算した値。
 //
-// 1 本目: voice を省略すると by.voice (sampleCharacter では theme の narrator) の
+// 1 本目: voice を省略すると by.voice (sampleCharacter の voice) の
 // ままになる。{漢字|よみ} で読みを添えられる。at は塊の先頭からの相対秒。
 //
-// 2 本目: voice にファイル内の const (calm、theme の narrator の差分) を
+// 2 本目: voice にファイル内の const (calm、by.voice の差分) を
 // 渡し、by.voice を上書きしている。after は「前の発話の音声の終わりからの
 // 間隔 (秒)」。by: { character, expression: "sweat" } で、この発話の開始と
 // 同時に立ち絵の表情が汗顔に変わる (次に expression を指定する発話まで維持

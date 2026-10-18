@@ -39,7 +39,7 @@ const consumerRoot = process.cwd();
  * 利用側の app/config.ts を読み、configure() する。timeline の読み込みは
  * ここでは使わないため (静的解析だけを行う)、呼ばれたら throw する関数を渡す。
  *
- * theme の中身 (narrator の全項目・palette の色) は configure() が見るため、
+ * theme の中身 (palette の色) は configure() が見るため、
  * ここは app/config.ts が読めて必要な値を export しているかだけを確かめる。
  */
 export const configureFromConsumer = async (root: string): Promise<void> => {

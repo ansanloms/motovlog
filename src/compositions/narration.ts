@@ -1,6 +1,6 @@
 // timeline.ts が発話 (セリフ) を書くための DSL (ADR-0010, ADR-0006, ADR-0011)。
 //
-// 書き手は line({ text, reading?, voice?, by? }) を cut() の
+// 書き手は line({ text, reading?, voice?, by }) を cut() の
 // node に渡して narration() にまとめて渡す。text・reading はリテラルで書く
 // こと (配列で書くと字幕・合成それぞれの改行として結合する、text と
 // TextLines を参照)。字幕には displayText(text)、合成には
@@ -8,16 +8,15 @@
 // 合成に使う)。text・reading の
 // {漢字|よみ} 記法はどちらか片側が空・| が無い・入れ子や非対称の括弧
 // (閉じ忘れ・開き忘れ) だと throw する (assertReadingNotation())。voice は
-// リテラルの他、利用側の theme の
-// narrator の参照・spread・同じファイルの const・プロパティアクセスが書ける
+// リテラルの他、spread・同じファイルの const・プロパティアクセスが書ける
 // (scripts/voice/extract.ts が読める式に限る。watcher が timeline.ts を
 // 静的解析して wav・キャッシュを作るため)。voice に null を渡すと声無し
 // (wav・lipsync を作らない、cut()/fade() の duration が必須) になる。by は
 // character() が返す Character の参照 (表情は既定) か、
 // `{ character, expression? }` の形 (character.ts の ByRef) で、figure() が
-// 自分宛の発話を選ぶのに使う (character の identity で結び付く)。声質の
-// 実効値は利用側の theme の narrator ← by.voice ← line() の voice の順で
-// 上書きした値 (src/voice/key.ts の mergeVoice())。音声キャッシュの key は
+// 自分宛の発話を選ぶのに使う (character の identity で結び付く)。by は必須。
+// 声質の実効値は by.voice (character() が全項目を持つ) ← line() の voice の
+// 順で上書きした値 (src/voice/key.ts の mergeVoice())。音声キャッシュの key は
 // text と (reading があれば) reading とこの実効の声質だけから作り、
 // by・expression は含めない。expression は by.expressions のキーで、
 // 指定した表情に切り替える (省略時は現在の表情を
@@ -101,13 +100,13 @@ type LineProps = {
    */
   reading?: TextLines;
   /**
-   * 声質。省略分は theme の既定話者に by.voice を重ねた値で埋める。null を
+   * 声質の差分。省略分は by.voice で埋める。null を
    * 渡すと声無し (wav・lipsync を作らない)。声無しの item は cut()/fade()
    * の duration が必須で、字幕の尺は duration と同じになる。
    */
   voice?: VoiceOptions | null;
   /** character() の参照 (表情は既定) か `{ character, expression? }` の形。figure() が自分宛の発話を選ぶのに使う (character の identity で結び付く)。 */
-  by?: ByRef;
+  by: ByRef;
 };
 
 /**
@@ -119,7 +118,7 @@ type LineProps = {
 type NormalizedLineProps = Omit<LineProps, "by" | "text" | "reading"> & {
   text: string;
   reading?: string;
-  by?: Character;
+  by: Character;
   expression?: string;
 };
 
@@ -142,8 +141,8 @@ LineMarker.displayName = LINE_MARKER_NAME;
 /**
  * 発話 1 本の台本を書く。text (VOICEVOX の {漢字|よみ} 記法を含んでよい、
  * 配列で書くと字幕の改行として結合する) と reading (合成に渡す文、text と
- * 同じく配列可、省略時は text をそのまま使う)、voice (省略時は theme の
- * 既定話者に by.voice を重ねた値、null で声無し)、by (character() の参照、
+ * 同じく配列可、省略時は text をそのまま使う)、voice (省略時は by.voice、
+ * 指定時は by.voice に差分を重ねた値、null で声無し)、by (character() の参照、
  * 表情は既定、か `{ character, expression? }` の形。figure() が自分宛の
  * 発話を選ぶのに使う) を渡す。cut() の node に渡し、narration() にまとめて
  * 渡すこと。text・reading・voice はリテラルで書く (scripts/voice の
@@ -187,9 +186,9 @@ export const line = (props: LineProps): ReactNode => {
     );
   }
 
-  const resolved = props.by === undefined ? undefined : resolveBy(props.by);
+  const resolved = resolveBy(props.by);
 
-  if (resolved?.expression !== undefined) {
+  if (resolved.expression !== undefined) {
     if (!Object.hasOwn(resolved.character.expressions, resolved.expression)) {
       throw new Error(
         `line(): by に無い表情 "${resolved.expression}" が指定されました: ${text}`,
@@ -201,8 +200,8 @@ export const line = (props: LineProps): ReactNode => {
     text,
     reading,
     voice: props.voice,
-    by: resolved?.character,
-    expression: resolved?.expression,
+    by: resolved.character,
+    expression: resolved.expression,
   });
 };
 
@@ -325,8 +324,8 @@ export type Speech = {
   readonly duration: number;
   /** 口パクの母音区間の列 (VOICEVOX の音声合成クエリ由来)。 */
   readonly lipsync: readonly LipsyncEntry[];
-  /** line() の by (指定時)。figure() が自分宛の発話を選ぶのに使う。 */
-  readonly by?: Character;
+  /** line() の by。figure() が自分宛の発話を選ぶのに使う。 */
+  readonly by: Character;
   /** line() の expression (指定時)。figure() の表情の切り替えに使う。 */
   readonly expression?: string;
 };
@@ -512,7 +511,7 @@ export const narration = async (
       const key = await voiceKey({
         text: speech.text,
         reading: speech.reading,
-        voice: mergeVoice(speech.by?.voice, speech.voice),
+        voice: mergeVoice(speech.by.voice, speech.voice),
       });
       const url = staticFile(`${linePath(slug, key)}.json`);
       const cache = await waitForVoiceCache(url, resolvedDeps);
