@@ -84,7 +84,7 @@ const isLineNode = (node: unknown): boolean =>
 
 /**
  * node を item の尺の間、from から to へ線形に動かす PanNode を返す。
- * cut()/fade() の node に渡す (`fade(pan(still, { to: { scale: 1.2 } }),
+ * cut()/fade() の node に渡す (`fade(pan(still({ src }), { to: { scale: 1.2 } }),
  * { duration: 20, in: 3 })`)。from の省略した項目は `{ x: 50, y: 50,
  * scale: 1 }` で、to の省略した項目は from の値で埋める (to を丸ごと省くと
  * from と同じ)。x/y は 0〜100、scale は 1 以上で、範囲外や有限でない数は
