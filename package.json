@@ -37,8 +37,8 @@
     "@remotion/cli": "4.0.529",
     "@remotion/google-fonts": "4.0.529",
     "@remotion/media": "4.0.529",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "remotion": "4.0.529"
   },
   "devDependencies": {
@@ -53,8 +53,8 @@
     "@types/web": "0.0.358",
     "eslint": "9.19.0",
     "prettier": "3.9.9",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "remotion": "4.0.529",
     "vitest": "5.0.3"
   },
