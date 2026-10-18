@@ -8,7 +8,7 @@
 import path from "node:path";
 import type { VoiceCache } from "../../src/voice/cache.ts";
 import { readingText } from "../../src/voice/reading.ts";
-import { linePath, resolveVoice, voiceKey } from "../../src/voice/key.ts";
+import { linePath, voiceKey } from "../../src/voice/key.ts";
 import { fps as themeFps } from "../../src/theme/timing.ts";
 import {
   applyVoice,
@@ -73,7 +73,6 @@ export const generateMissing = async (
   const madeDirs = new Set<string>();
 
   for (const { text, reading: readingProp, voice } of lines) {
-    const resolvedVoice = resolveVoice(voice);
     const key = await voiceKey({ text, reading: readingProp, voice });
     const relPath = linePath(slug, key);
     const wavPath = path.join(publicDir, `${relPath}.wav`);
@@ -85,26 +84,21 @@ export const generateMissing = async (
       continue;
     }
 
-    if (!checkedSpeakers.has(resolvedVoice.speaker)) {
-      await checkSpeaker(fetchImpl, voicevoxUrl, resolvedVoice.speaker);
-      checkedSpeakers.add(resolvedVoice.speaker);
+    if (!checkedSpeakers.has(voice.speaker)) {
+      await checkSpeaker(fetchImpl, voicevoxUrl, voice.speaker);
+      checkedSpeakers.add(voice.speaker);
     }
 
     const reading = readingText(readingProp ?? text);
     const query = applyVoice(
-      await fetchAudioQuery(
-        fetchImpl,
-        voicevoxUrl,
-        reading,
-        resolvedVoice.speaker,
-      ),
-      resolvedVoice,
+      await fetchAudioQuery(fetchImpl, voicevoxUrl, reading, voice.speaker),
+      voice,
     );
     const wav = await fetchSynthesis(
       fetchImpl,
       voicevoxUrl,
       query,
-      resolvedVoice.speaker,
+      voice.speaker,
     );
 
     const lipsync = queryToLipsync(query);
@@ -138,7 +132,7 @@ export const generateMissing = async (
 
     const cache: VoiceCache = {
       text,
-      voice: resolvedVoice,
+      voice,
       reading,
       duration,
       lipsync,

@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-09-09T20:00:00Z
-refs: [2, 5, 6, 8, 9, 10, 14]
+refs: [2, 5, 6, 8, 9, 10, 14, 22]
 tags: [figure, lipsync, character, timeline]
 ---
 

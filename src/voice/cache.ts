@@ -29,8 +29,9 @@ export type Voice = {
 };
 
 /**
- * 書き手が line() に書く voice。項目は全て任意で、省略分は key.ts の
- * resolveVoice() が theme (src/theme/voice.ts) の既定値で埋める。
+ * 書き手が line() に書く voice (差分)。項目は全て任意で、省略分は
+ * line() の by の voice (character() が全項目を持つ) が埋める (key.ts の
+ * mergeVoice())。
  */
 export type VoiceOptions = Partial<Voice>;
 
@@ -72,15 +73,22 @@ export const VOICE_KEYS = [
   "silenceAfter",
 ] as const;
 
-const isVoice = (value: unknown): value is Voice => {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
+/**
+ * value が持たない (または有限数でない) VOICE_KEYS の項目名を返す。空配列なら
+ * 全項目が有限数。isVoice・character()・extract.ts の assertFullVoice が共有する。
+ */
+export const missingVoiceKeys = (value: unknown): string[] => {
+  const candidate = (
+    typeof value === "object" && value !== null ? value : {}
+  ) as Partial<Record<string, unknown>>;
 
-  const candidate = value as Partial<Record<string, unknown>>;
-
-  return VOICE_KEYS.every((key) => typeof candidate[key] === "number");
+  return VOICE_KEYS.filter((key) => !Number.isFinite(candidate[key]));
 };
+
+const isVoice = (value: unknown): value is Voice =>
+  typeof value === "object" &&
+  value !== null &&
+  missingVoiceKeys(value).length === 0;
 
 /** VoiceCache の形 (項目の有無と型) だけを検査する。値の妥当性までは見ない。 */
 export const isVoiceCache = (value: unknown): value is VoiceCache => {

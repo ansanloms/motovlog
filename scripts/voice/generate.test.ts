@@ -1,12 +1,13 @@
 import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 import { linePath, voiceKey } from "../../src/voice/key.ts";
-import { narrator } from "../../theme/index.ts";
+import { sampleCharacter } from "../../characters/sample.ts";
 import { generateMissing } from "./generate.ts";
 import type { GenerateDeps } from "./generate.ts";
 
 const PUBLIC_DIR = "/tmp/projects";
 const SLUG = "00000000-sample";
+const voice = sampleCharacter.voice;
 
 /** テストで使う wav・json の絶対パス (projects/ + linePath()) を組む。 */
 const cachePaths = (key: string): { wav: string; json: string } => {
@@ -96,7 +97,7 @@ const makeDeps = (
 
     if (url.includes("/speakers")) {
       return new Response(
-        JSON.stringify([{ styles: [{ id: narrator.speaker }] }]),
+        JSON.stringify([{ styles: [{ id: voice.speaker }] }]),
         { status: 200 },
       );
     }
@@ -159,13 +160,13 @@ describe("generateMissing", () => {
 
     const result = await generateMissing(
       "00000000-sample",
-      [{ text: "こんにちは" }],
+      [{ voice, text: "こんにちは" }],
       deps,
     );
 
     expect(result).toEqual({ generated: 1, skipped: 0 });
 
-    const key = await voiceKey({ text: "こんにちは" });
+    const key = await voiceKey({ voice, text: "こんにちは" });
     const { wav: wavPath, json: jsonPath } = cachePaths(key);
     expect(deps.writes.has(wavPath)).toBe(true);
     expect(deps.writes.has(jsonPath)).toBe(true);
@@ -178,7 +179,7 @@ describe("generateMissing", () => {
 
     const written = JSON.parse(deps.writes.get(jsonPath) as string);
     expect(written.duration).toBeCloseTo(0.1, 6);
-    expect(written.voice).toEqual(narrator);
+    expect(written.voice).toEqual(voice);
   });
 
   it("reading があれば合成に使い、キャッシュの reading に書く", async () => {
@@ -186,13 +187,20 @@ describe("generateMissing", () => {
 
     const result = await generateMissing(
       "00000000-sample",
-      [{ text: "{浄土平|じょうどだいら}", reading: "じょうどだいらだよ" }],
+      [
+        {
+          voice,
+          text: "{浄土平|じょうどだいら}",
+          reading: "じょうどだいらだよ",
+        },
+      ],
       deps,
     );
 
     expect(result).toEqual({ generated: 1, skipped: 0 });
 
     const key = await voiceKey({
+      voice,
       text: "{浄土平|じょうどだいら}",
       reading: "じょうどだいらだよ",
     });
@@ -207,7 +215,10 @@ describe("generateMissing", () => {
 
     const result = await generateMissing(
       "00000000-sample",
-      [{ text: "こんにちは" }, { text: "こんにちは", reading: "こんにちわ" }],
+      [
+        { voice, text: "こんにちは" },
+        { voice, text: "こんにちは", reading: "こんにちわ" },
+      ],
       deps,
     );
 
@@ -215,12 +226,12 @@ describe("generateMissing", () => {
   });
 
   it("wav・json が両方あれば skip する", async () => {
-    const key = await voiceKey({ text: "こんにちは" });
+    const key = await voiceKey({ voice, text: "こんにちは" });
     const deps = makeDeps({ existingKeys: new Set([key]) });
 
     const result = await generateMissing(
       "00000000-sample",
-      [{ text: "こんにちは" }],
+      [{ voice, text: "こんにちは" }],
       deps,
     );
 
@@ -242,7 +253,10 @@ describe("generateMissing", () => {
 
     await generateMissing(
       SLUG,
-      [{ text: "こんにちは" }, { text: "さようなら" }],
+      [
+        { voice, text: "こんにちは" },
+        { voice, text: "さようなら" },
+      ],
       deps,
     );
 
@@ -250,8 +264,8 @@ describe("generateMissing", () => {
   });
 
   it("skip される発話しか無ければ /speakers を呼ばない", async () => {
-    const key1 = await voiceKey({ text: "こんにちは" });
-    const key2 = await voiceKey({ text: "さようなら" });
+    const key1 = await voiceKey({ voice, text: "こんにちは" });
+    const key2 = await voiceKey({ voice, text: "さようなら" });
     const deps = makeDeps({ existingKeys: new Set([key1, key2]) });
     let speakerCalls = 0;
     const baseFetch = deps.fetchImpl;
@@ -265,7 +279,10 @@ describe("generateMissing", () => {
 
     await generateMissing(
       SLUG,
-      [{ text: "こんにちは" }, { text: "さようなら" }],
+      [
+        { voice, text: "こんにちは" },
+        { voice, text: "さようなら" },
+      ],
       deps,
     );
 
@@ -280,7 +297,7 @@ describe("generateMissing", () => {
 
       if (url.includes("/speakers")) {
         return new Response(
-          JSON.stringify([{ styles: [{ id: narrator.speaker }] }]),
+          JSON.stringify([{ styles: [{ id: voice.speaker }] }]),
           { status: 200 },
         );
       }
@@ -296,7 +313,11 @@ describe("generateMissing", () => {
     const warn = vi.fn();
     deps.warn = warn;
 
-    await generateMissing("00000000-sample", [{ text: "こんにちは" }], deps);
+    await generateMissing(
+      "00000000-sample",
+      [{ voice, text: "こんにちは" }],
+      deps,
+    );
 
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0][0]).toMatch(/mora 合計と wav の実尺の差/);
@@ -310,7 +331,7 @@ describe("generateMissing", () => {
       })) as typeof fetch;
 
     await expect(
-      generateMissing("00000000-sample", [{ text: "こんにちは" }], deps),
+      generateMissing("00000000-sample", [{ voice, text: "こんにちは" }], deps),
     ).rejects.toThrow(/speaker/);
   });
 });

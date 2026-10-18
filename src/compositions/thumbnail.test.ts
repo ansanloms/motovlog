@@ -2,6 +2,7 @@ import { isValidElement } from "react";
 import { staticFile } from "remotion";
 import { describe, expect, it } from "vitest";
 import { Thumbnail } from "../../modules/thumbnail/index.ts";
+import { testVoice } from "../../test/voice.ts";
 import { character } from "./character.ts";
 import type { Character } from "./character.ts";
 import { figureLayers } from "./figure.ts";
@@ -23,6 +24,7 @@ const mouth = {
 const eyes = { eyes: { open: "eyes-open.png", closed: "eyes-closed.png" } };
 
 const hero: Character = character({
+  voice: testVoice,
   expressions: {
     normal: ["body.png", eyes, mouth],
     sweat: ["body.png", "fx-sweat.png"],

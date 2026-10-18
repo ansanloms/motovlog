@@ -1,7 +1,7 @@
 ---
 status: accepted
 date: 2026-09-11T00:00:00Z
-refs: [2, 4, 5, 6, 10, 11]
+refs: [2, 4, 5, 6, 10, 11, 22]
 tags: [layout, package, theme, boundary]
 ---
 

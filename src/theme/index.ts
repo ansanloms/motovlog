@@ -20,9 +20,8 @@ export {
   fps,
   subtitleTiming,
 } from "./timing.ts";
-export type { Narrator } from "./voice.ts";
 export { themeCssVars, thumbScrim } from "./cssVars.ts";
 export { ThemeRoot } from "./ThemeRoot.tsx";
-// palette と narrator の値は利用側 (theme/index.ts) が持ち、configure() で lib
+// palette の値は利用側 (theme/index.ts) が持ち、configure() で lib
 // に渡る (ADR-0012)。Theme 型はその形。
 export type { Theme } from "../setup.ts";

@@ -21,7 +21,7 @@ lib (動画を作る機能) は次の 3 つ。
 
 - `app/index.ts`: Remotion の入口。`configure()` で利用側の値を lib に渡し、`registerRoot()` を呼ぶ
 - `app/config.ts`: `theme` と `defaultProject` (既定の slug)。音声生成の watcher (Node) も読むため Remotion を import しない
-- `theme/index.ts`: カラーパレット (`palette`) と既定の話者 (`narrator`)
+- `theme/index.ts`: カラーパレット (`palette`)
 - `projects/<slug>/timeline.ts`: 動画の定義。コミットする
 - `characters/<name>.ts`: キャラクター (立ち絵) の定義。コミットする
 - `projects/<slug>/assets/`: 動画固有の素材 (変換済み素材・Studio 用プロキシ・写真・セリフ音声等)。コミットしない
@@ -67,7 +67,7 @@ npm install github:ansanloms/motovlog#semver:^0.2.0
 | ----------------------------- | --------------------------------------------------------------------------- |
 | `app/index.ts`                | Temporal polyfill の読み込み・`configure()` の呼び出し・`registerRoot()`    |
 | `app/config.ts`               | `theme` の re-export と `defaultProject`。Remotion を import しない         |
-| `theme/index.ts`              | `palette`・`narrator` の値と `theme: Theme`                                 |
+| `theme/index.ts`              | `palette` の値と `theme: Theme`                                           |
 | `projects/<slug>/timeline.ts` | 動画の定義 (「新しい動画を作る」参照)                                       |
 | `characters/<name>.ts`        | キャラクターの定義 (「立ち絵」参照)                                         |
 | `remotion.config.ts`          | `Config.setEntryPoint("./app/index.ts")`・`Config.setPublicDir("projects")` |
@@ -160,13 +160,13 @@ main の上で `npm version <patch|minor|X.Y.Z>` を実行すると、`.npmrc` �
 
 具体的なコマンドと timeline.ts の書き換え箇所は [docs/howto-new-project.md](docs/howto-new-project.md) にある。
 
-立ち絵を出す project では、先に `characters/<name>.ts` を作る (「立ち絵」)。カラーパレットと既定の話者は `theme/index.ts` にあり、変えるとすべての project に効く ([ADR-0005](docs/adr/0005-fix-look-in-theme-not-timeline.md))。`REMOTION_PROJECT` が未設定・空のときに読む project は `app/config.ts` の `defaultProject` で決まる。
+立ち絵を出す project では、先に `characters/<name>.ts` を作る (「立ち絵」)。カラーパレットは `theme/index.ts` にあり、声質はキャラクター (`character()` の `voice`) が持ち、変えるとすべての project に効く ([ADR-0005](docs/adr/0005-fix-look-in-theme-not-timeline.md))。`REMOTION_PROJECT` が未設定・空のときに読む project は `app/config.ts` の `defaultProject` で決まる。
 
 ## サンプル project
 
 `projects/00000000-sample/timeline.ts` が同梱されている。slug の日付部分は `00000000` にしている (実際の project は `YYYYMMDD` を使う。サンプルだけの例外)。走行映像・立ち絵・OP・章タイトル・写真紹介・ED・BGM・注釈・発話の一通りを並べてあり、新しい project の出発点としてコピーして使う。
 
-立ち絵は `projects/common/characters/sample/` の自作 SVG で、`characters/sample.ts` がこれを参照する。この SVG はリポジトリにコミットしているため、用意は要らない ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。ED のクレジットは `theme/index.ts` の `narrator` に対応する VOICEVOX の行だけを持つ。
+立ち絵は `projects/common/characters/sample/` の自作 SVG で、`characters/sample.ts` がこれを参照する。この SVG はリポジトリにコミットしているため、用意は要らない ([ADR-0020](docs/adr/0020-unify-project-dir-under-public-dir.md))。ED のクレジットは `characters/sample.ts` の `voice` に対応する VOICEVOX の行だけを持つ。
 
 残りの素材はコミットしていないので、次を `projects/` 配下に用意する。
 
@@ -348,10 +348,10 @@ export default timeline([
 ]);
 ```
 
-- `line({ text, reading?, voice?, by? })` の `text` は文字列リテラル (`{漢字|よみ}` の記法で読みを添えられる)、またはそれらの配列 (字幕の改行として結合される。読みには影響しない)。字幕には `text` を、合成には `reading` (省略時は `text`) を使う。`{漢字|よみ}` はどちらか片側が空・`|` が無い・入れ子や非対称の括弧 (閉じ忘れ・開き忘れ) だと throw する (配列の場合は結合した文字列で検査する)。
+- `line({ text, reading?, voice?, by })` の `text` は文字列リテラル (`{漢字|よみ}` の記法で読みを添えられる)、またはそれらの配列 (字幕の改行として結合される。読みには影響しない)。字幕には `text` を、合成には `reading` (省略時は `text`) を使う。`{漢字|よみ}` はどちらか片側が空・`|` が無い・入れ子や非対称の括弧 (閉じ忘れ・開き忘れ) だと throw する (配列の場合は結合した文字列で検査する)。
 - `reading` は合成に渡す文 (`text` と同じ書式、`{漢字|よみ}` を書ける。`text` と同じく配列可)。文字列リテラルで書く。空文字は throw する (声無しは `voice: null` で書く)。`voice: null` と `reading` を同時に指定しても throw する (声無しの行に `reading` は意味を持たないため)。
-- `by` は `characters/<name>.ts` の `character()` の戻り値の参照 (表情は現在の表情を維持) か、`{ character, expression? }` の形 (表情を明示する)。指定すると `narration()` の `speech` にその `character` の参照が乗り、`figure()` (「立ち絵」) の括りに含めるとその立ち絵が自分宛の発話を選ぶのに使う。
-- `voice` の実効値は利用側の既定話者 (`theme/index.ts` の `narrator`) ← `by.voice` ← `line()` 自身の `voice` の順で上書きした値になる。差分だけを書く (例: `{ speed: 0.9 }`)。`voice: null` を渡すと声無し (wav・lipsync を作らない) になり、`cut()`/`fade()` の `duration` の明示が必須になる (字幕の尺 = `duration`)。声の無い字幕は `line({ text, voice: null })` を `duration` を明示した項目として `narration()` に置いて書く。`text`・`reading`・`voice`・`by` は watcher (`npm run dev`) が静的に読むため、リテラルの他は `theme/index.ts` からの import・spread・同じファイルの const・プロパティアクセスに限られる (`voice: null` はリテラルとしてそのまま読める)。`by` は識別子、または `{ character, expression? }` の形のオブジェクトリテラル (`character` は識別子、`expression` は文字列リテラル) に限る (詳細は [ADR-0010](docs/adr/0010-build-narration-timeline-with-hashed-voice-cache.md), [ADR-0011](docs/adr/0011-draw-figure-from-character-presets-linked-by-speech.md))。
+- `by` は必須で、`characters/<name>.ts` の `character()` の戻り値の参照 (表情は現在の表情を維持) か、`{ character, expression? }` の形 (表情を明示する)。`by` の無い `line()` は型エラーになり、watcher (`npm run dev`) もエラーにする ([ADR-0022](docs/adr/0022-require-by-and-drop-default-narrator.md))。`narration()` の `speech` にその `character` の参照が乗り、`figure()` (「立ち絵」) の括りに含めるとその立ち絵が自分宛の発話を選ぶのに使う。
+- `voice` の実効値は `by.voice` (`character()` が全項目を持つ) ← `line()` 自身の `voice` の順で上書きした値になる。`line()` の `voice` には差分だけを書く (例: `{ speed: 0.9 }`)。`voice: null` を渡すと声無し (wav・lipsync を作らない) になり、`cut()`/`fade()` の `duration` の明示が必須になる (字幕の尺 = `duration`)。声の無い字幕は `line({ text, by, voice: null })` を `duration` を明示した項目として `narration()` に置いて書く。`text`・`reading`・`voice`・`by` は watcher (`npm run dev`) が静的に読むため、リテラルの他は import・spread・同じファイルの const・プロパティアクセスに限られる (`voice: null` はリテラルとしてそのまま読める)。`by` は識別子、または `{ character, expression? }` の形のオブジェクトリテラル (`character` は識別子、`expression` は文字列リテラル) に限る (詳細は [ADR-0010](docs/adr/0010-build-narration-timeline-with-hashed-voice-cache.md), [ADR-0011](docs/adr/0011-draw-figure-from-character-presets-linked-by-speech.md))。
 - `by.expression` は `character` の `expressions` のキー (文字列リテラル)。指定すると、この発話の開始と同時に立ち絵の表情がそのキーに切り替わり、次に `expression` を指定する自分宛の発話まで維持する (詳細は「立ち絵」)。この引き継ぎは同じ `narration()` の呼び出し (1 つの塊) の中に限り、別の `narration()` の呼び出しをまたいでは引き継がない (新しい塊は初期の表情から始まる)。`voice: null` の項目でも `by` は書け、表情の切り替えだけ効く (口パクは付かない)。
 - `cut()` の `duration` を省いた item は `narration()` にだけ渡せる。位置は `at`/`after`/省略のいずれかで指定し、`after` は前の発話の音声の終わりからの間隔 (秒) になる。
 - `narration()` の入力配列には `line()` の item に加え、`figure()` (「立ち絵」) が返す立ち絵の括りを item と混ぜて置ける。括りの中の行は配列の順のまま平らにして解決するため、`at`/`after`/省略や `after` の連鎖は行を直接書いたのと同じに振る舞う (括りの後ろに続く行は括りの最後の行から続く)。括りごとに立ち絵の item を 1 つ作り、暗がり・発話より下の立ち絵 layer に積む (詳細は「立ち絵」)。
@@ -365,7 +365,7 @@ project の選択は環境変数 `REMOTION_PROJECT` (slug) で行い、`.env` �
 
 立ち絵 (話者のキャラクター絵) の目パチ・口パク・表情は `@ansanloms/motovlog/compositions` が公開する `character()` と `figure()` で書く ([ADR-0011](docs/adr/0011-draw-figure-from-character-presets-linked-by-speech.md), [ADR-0014](docs/adr/0014-nest-timeline-groups-and-place-narration-as-group.md))。
 
-キャラクターの定義は project をまたいで使い回すため `characters/<name>.ts` (リポジトリルート、`projects/` の隣) に置き、`character({ voice?, expressions })` で組み立てて export する。`voice` はこのキャラクターの既定の声質差分 (省略時は `theme/index.ts` の既定話者のまま)。`expressions` は表情名から画像レイヤーの列 (下から上に重ねる順) への対応で、レイヤーは次の 3 種を混ぜて書ける。
+キャラクターの定義は project をまたいで使い回すため `characters/<name>.ts` (リポジトリルート、`projects/` の隣) に置き、`character({ voice, expressions })` で組み立てて export する。`voice` はこのキャラクターの声質で、8 項目 (`speaker`・`speed`・`pitch`・`intonation`・`volume`・`pause`・`silenceBefore`・`silenceAfter`) すべてが必須 (欠けると `character()` と watcher が throw する)。`expressions` は表情名から画像レイヤーの列 (下から上に重ねる順) への対応で、レイヤーは次の 3 種を混ぜて書ける。
 
 - 静止画 (文字列)。体・腕・眉・小物・顔色効果等、パスは `projects/` (public dir) 相対 (例: `common/characters/<name>/body.png`)。
 - 目 `{ eyes: { open, closed } }`。立ち絵が目パチで開閉を切り替える。

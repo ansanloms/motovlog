@@ -1,5 +1,5 @@
 // projects/<slug>/timeline.ts を TypeScript の compiler API で静的解析し、
-// line({ text, reading?, voice?, by? }) 呼び出しの text・reading
+// line({ text, reading?, voice?, by }) 呼び出しの text・reading
 // と実効の voice を集める (ADR-0010, ADR-0011)。
 //
 // watcher (scripts/voice.ts --watch) が timeline.ts の変更ごとに実行時
@@ -24,10 +24,11 @@
 // extractLines() の lines から除外し、件数を silent に集計する (reading と
 // voice: null を同時に指定すると位置付きで throw する)。
 //
-// by は「識別子」または「オブジェクトリテラル ({ character, expression? }、
-// character は識別子)」に限る。character が指す値は次のいずれかに解決し、
-// その voice プロパティ (無ければ undefined) だけを読む (expressions は
-// 評価しない)。
+// by は必須で、「識別子」または「オブジェクトリテラル ({ character, expression? }、
+// character は識別子)」に限る (無ければ位置付きで throw する、ADR-0022)。
+// character が指す値は次のいずれかに解決し、その voice プロパティだけを読む
+// (expressions は評価しない)。voice は 8 項目すべて揃っていなければ throw
+// する (character() の実行時検査と同じ)。
 // - 同じファイルの top-level const で、初期化式が character() の呼び出し
 //   (character() の実体、src/compositions/character.ts の export を指す
 //   import に解決されるものに限る)。
@@ -45,8 +46,8 @@ import { createRequire } from "node:module";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import * as ts from "typescript";
-import { VOICE_KEYS } from "../../src/voice/cache.ts";
-import type { VoiceOptions } from "../../src/voice/cache.ts";
+import { VOICE_KEYS, missingVoiceKeys } from "../../src/voice/cache.ts";
+import type { Voice, VoiceOptions } from "../../src/voice/cache.ts";
 import { mergeVoice } from "../../src/voice/key.ts";
 import { assertReadingNotation } from "../../src/voice/reading.ts";
 
@@ -135,8 +136,8 @@ export type ExtractedLine = {
   text: string;
   /** line() の reading (リテラル、配列なら結合済み)。省略時は undefined (合成には text をそのまま使う)。 */
   reading?: string;
-  /** line() の実効の voice (mergeVoice(by の voice, line() 自身の voice))。省略時は undefined。 */
-  voice?: VoiceOptions;
+  /** line() の実効の voice (mergeVoice(by の voice, line() 自身の voice))。全項目を持つ。 */
+  voice: Voice;
 };
 
 class ExtractLineError extends Error {}
@@ -434,6 +435,28 @@ const validateVoice = (
   return value as VoiceOptions;
 };
 
+/**
+ * character().voice の値を、VOICE_KEYS の 8 項目すべてを持つ Voice として
+ * 検査する (欠落・非有限数の判定は character() と同じ missingVoiceKeys()。
+ * ADR-0022)。項目ごとの型・未知キーの検査は validateVoice() が済ませて
+ * いる前提で、未知キーはここでは見ない (validateVoice() が別に弾く)。
+ */
+const assertFullVoice = (
+  voice: VoiceOptions | undefined,
+  label: string,
+  node: ts.Node,
+): Voice => {
+  const missing = missingVoiceKeys(voice);
+
+  if (missing.length > 0) {
+    throw new ExtractLineError(
+      `${positionOf(node.getSourceFile(), node)}: ${label} は ${VOICE_KEYS.join("・")} のすべてが必要です (足りない項目: ${missing.join("・")})`,
+    );
+  }
+
+  return voice as Voice;
+};
+
 // character() の引数の property の名前 (PropertyName) が "voice" かどうかを
 // 見る。識別子・文字列リテラルのキーだけを対象にする (resolveByVoice() の
 // 検査と解決の両方が使う)。
@@ -451,12 +474,12 @@ const propertyKeyIsVoice = (name: ts.PropertyName): boolean =>
  *   あれば throw する (静的解析が実行時の key と食い違うのを防ぐ)。
  * - import の binding: 動的 import() で export を読み、その voice
  *   プロパティを読む (export 自体がオブジェクトでなければ throw)。
- * どちらの経路でも voice が無ければ undefined を返す。
+ * どちらの経路でも voice が 8 項目すべて揃っていなければ throw する。
  */
 const resolveByVoice = async (
   node: ts.Identifier,
   context: EvalContext,
-): Promise<VoiceOptions | undefined> => {
+): Promise<Voice> => {
   const { sourceFile, consts, imports } = context;
   const name = node.text;
 
@@ -516,14 +539,18 @@ const resolveByVoice = async (
     }
 
     if (!voiceProp) {
-      return undefined;
+      return assertFullVoice(undefined, "character().voice", arg);
     }
 
     const value = ts.isShorthandPropertyAssignment(voiceProp)
       ? await resolveIdentifier(voiceProp.name, context, "character().voice")
       : await evaluateExpr(voiceProp.initializer, context, "character().voice");
 
-    return validateVoice(value, "character().voice", voiceProp);
+    return assertFullVoice(
+      validateVoice(value, "character().voice", voiceProp),
+      "character().voice",
+      voiceProp,
+    );
   }
 
   const binding = imports.get(name);
@@ -539,9 +566,13 @@ const resolveByVoice = async (
 
     const voice = (exported as Record<string, unknown>).voice;
 
-    return voice === undefined
-      ? undefined
-      : validateVoice(voice, "line().by.voice", node);
+    return assertFullVoice(
+      voice === undefined
+        ? undefined
+        : validateVoice(voice, "character().voice", node),
+      "character().voice",
+      node,
+    );
   }
 
   throw new ExtractLineError(
@@ -910,6 +941,15 @@ const readLineCall = async (
     assertReadingNotationAt(sourceFile, readingProp.node, reading);
   }
 
+  const byProp = props.get("by");
+  let by: ts.Identifier;
+
+  if (!byProp) {
+    throw new ExtractLineError(
+      `${positionOf(sourceFile, call)}: line() に by がありません (character() の戻り値か { character, expression } で指定してください)`,
+    );
+  }
+
   const voiceProp = props.get("voice");
   let voice: VoiceOptions | undefined;
 
@@ -930,28 +970,23 @@ const readLineCall = async (
     voice = validateVoice(value, "line().voice", voiceProp.node);
   }
 
-  const byProp = props.get("by");
-  let by: ts.Identifier | undefined;
-
-  if (byProp) {
-    if (ts.isIdentifier(byProp.node)) {
-      by = byProp.node;
-    } else if (ts.isObjectLiteralExpression(byProp.node)) {
-      by = readByObject(sourceFile, byProp.node);
-    } else {
-      throw new ExtractLineError(
-        `${positionOf(sourceFile, byProp.node)}: line().by は識別子か { character, expression } の形で書いてください`,
-      );
-    }
+  // 声無しの行は上で除外済み。by の形の検査と voice 解決は声のある行だけ。
+  if (ts.isIdentifier(byProp.node)) {
+    by = byProp.node;
+  } else if (ts.isObjectLiteralExpression(byProp.node)) {
+    by = readByObject(sourceFile, byProp.node);
+  } else {
+    throw new ExtractLineError(
+      `${positionOf(sourceFile, byProp.node)}: line().by は識別子か { character, expression } の形で書いてください`,
+    );
   }
 
-  const byVoice = by ? await resolveByVoice(by, context) : undefined;
-  const mergedVoice = mergeVoice(byVoice, voice);
+  const byVoice = await resolveByVoice(by, context);
 
   return {
     text,
     ...(reading !== undefined ? { reading } : {}),
-    ...(mergedVoice !== undefined ? { voice: mergedVoice } : {}),
+    voice: mergeVoice(byVoice, voice),
   };
 };
 
