@@ -8,5 +8,6 @@ export { audio } from "../../modules/audio/index.ts";
 export { chapter } from "../../modules/chapter/index.ts";
 export { ending } from "../../modules/ending/index.ts";
 export { photoShowcase } from "../../modules/photo-showcase/index.ts";
+export { still } from "../../modules/still/index.ts";
 export { subtitleBand } from "../../modules/subtitle/index.ts";
 export { video } from "../../modules/video/index.ts";

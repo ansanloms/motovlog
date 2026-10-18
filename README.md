@@ -14,7 +14,7 @@ Remotion でモトブログ動画を作るためのライブラリ (lib) と、�
 lib (動画を作る機能) は次の 3 つ。
 
 - `src/`: 演出の DSL (effects)・compositions・配置と秒数のトークン・音声と project の読み込み
-- `modules/`: npm package 相当の独立した単位。`modules/<name>/` は `index.ts` を入口に持ち、`@ansanloms/motovlog/modules/<name>` として公開される。今は見た目のコンポーネント 9 個 (コンポーネント・CSS Module・要素ファクトリ・テストをまとめる) と、module 間で共有する部品を持つ `modules/core/` を置いている。`modules/<name>/` が import してよい他の module は原則 `modules/core/` だけ
+- `modules/`: npm package 相当の独立した単位。`modules/<name>/` は `index.ts` を入口に持ち、`@ansanloms/motovlog/modules/<name>` として公開される。今は見た目のコンポーネント 10 個 (コンポーネント・CSS Module・要素ファクトリ・テストをまとめる) と、module 間で共有する部品を持つ `modules/core/` を置いている。`modules/<name>/` が import してよい他の module は原則 `modules/core/` だけ
 - `scripts/`: 音声生成・素材の変換・Studio の起動
 
 利用側 (動画 1 本ごとの値) は次のとおり。
@@ -32,14 +32,14 @@ lib (動画を作る機能) は次の 3 つ。
 
 利用側から lib を import してよいのは次の 5 つの入口と、各 module の入口 (`modules/<name>/index.ts`) だけで、それ以外の `src/`・`modules/` 配下を import すると ESLint が落とす。
 
-| 入口                                 | 実体                        | 主な中身                                                                                                                                                                                                     |
-| ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@ansanloms/motovlog`                | `src/index.ts`              | `configure`・`RemotionRoot`・`Motovlog` と、下の 4 つの再 export                                                                                                                                             |
-| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`・`pan`                                                                                                                              |
-| `@ansanloms/motovlog/components`     | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending` 等)                                                                                                                                                    |
-| `@ansanloms/motovlog/compositions`   | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                                                                                                                                                      |
-| `@ansanloms/motovlog/theme`          | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)                                                                                                                                          |
-| `@ansanloms/motovlog/modules/<name>` | `modules/<name>/index.ts`   | npm package 相当の独立した単位 (今はコンポーネント 9 個と `core`)。コンポーネントの module は要素ファクトリとコンポーネントを出し、`@ansanloms/motovlog/components` はこれらの要素ファクトリを再 export する |
+| 入口                                 | 実体                        | 主な中身                                                                                                                                                                                                      |
+| ------------------------------------ | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@ansanloms/motovlog`                | `src/index.ts`              | `configure`・`RemotionRoot`・`Motovlog` と、下の 4 つの再 export                                                                                                                                              |
+| `@ansanloms/motovlog/effects`        | `src/effects/index.ts`      | `timeline`・`cut`・`fade`・`crossfade`・`frame`・`start`・`end`・`group`・`pan`                                                                                                                               |
+| `@ansanloms/motovlog/components`     | `src/components/index.tsx`  | 要素ファクトリ (`video`・`audio`・`chapter`・`ending`・`still` 等)                                                                                                                                            |
+| `@ansanloms/motovlog/compositions`   | `src/compositions/index.ts` | `line`・`narration`・`character`・`figure`・`thumbnail`                                                                                                                                                       |
+| `@ansanloms/motovlog/theme`          | `src/theme/index.ts`        | 配置と秒数のトークン (`chapterTiming`・`characterTiming`・`fps` 等)                                                                                                                                           |
+| `@ansanloms/motovlog/modules/<name>` | `modules/<name>/index.ts`   | npm package 相当の独立した単位 (今はコンポーネント 10 個と `core`)。コンポーネントの module は要素ファクトリとコンポーネントを出し、`@ansanloms/motovlog/components` はこれらの要素ファクトリを再 export する |
 
 このリポジトリの中の利用側ファイルは、同じ 5 つの入口を相対パス (`../../src/effects/index.ts` 等) で import する。外部のリポジトリから依存として使う手順は「外部のリポジトリから使う」にある。
 
@@ -261,7 +261,7 @@ layer 内の item と item の間には `crossfade({ duration, audio? })` を置
 ```ts
 import { cut, fade, pan } from "../../src/effects/index.ts";
 
-fade(pan(still, { from: { x: 100, scale: 1.2 }, to: { x: 0 } }), {
+fade(pan(still({ src }), { from: { x: 100, scale: 1.2 }, to: { x: 0 } }), {
   duration: 20,
   in: 3,
 });
@@ -302,6 +302,7 @@ export default timeline([[cut(chapter1, { at: 0 })]]);
 | `chapter(props)`       | 章タイトル。`title` (文字列、または改行として結合される文字列の配列)・`subtitle`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `annotation(props)`    | 右上の注釈。`text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `photoShowcase(props)` | 写真紹介 (1〜2 枚)。`photos` (要素は写真の URL、`{ image, caption? }`、または短い動画 `{ video, trimBefore?, caption? }`。動画は音を出さない (常に無音)。動画は `npm run convert` で `projects/<slug>/assets/` に置いた変換済み素材を指す (写真の `photos/` ではない)。`caption: { text, position? }` は写真に添える文字で、`position` は `"top-left"`・`"top-right"`・`"bottom-left"` (既定)・`"bottom-right"`、`text` の `\n` は改行)・`fit?` (`"cover"` 既定は枠を満たすよう切る、`"contain"` は切らずに収め、影は媒体の縁に付く。キャプションの帯は見える媒体の矩形 (写真・動画とも、枠より小さければ拡大して収めた縁) に沿う) |
+| `still(props)`         | 静止画 1 枚を全画面に表示する。`src` (staticFile() 済み URL)・`fit?` (`"cover"` 既定は画面を埋める、`"contain"` は全体を収める。余白は透過 (下に層があればそれが見える))。尺は cut() / fade() で決める                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `ending(props)`        | ED。`title`・`subtitle`・`date`・`distance`・`ridingTime`・`routes`・`credits`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `subtitleBand({})`     | 字幕下の暗がり (props は無いが引数は要る、通常は `narration()` が組むので直接は使わない)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 
